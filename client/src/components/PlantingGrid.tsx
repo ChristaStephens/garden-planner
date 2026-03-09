@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, AlertCircle, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GardenBox } from "@/hooks/use-garden-store";
-import type { Plant } from "@shared/schema";
+import type { Plant } from "@/lib/types";
 
 interface PlantingGridProps {
   garden: GardenBox;
