@@ -1,5 +1,5 @@
 import { Droplets, Sun, Beaker, Heart, AlertTriangle } from "lucide-react";
-import type { Plant } from "@shared/schema";
+import type { Plant } from "@/lib/types";
 
 interface PlantCarePanelProps {
   plant: Plant;
