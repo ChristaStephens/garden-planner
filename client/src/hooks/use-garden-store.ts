@@ -53,6 +53,7 @@ interface GardenStore {
   plantInCell: (gardenId: string, x: number, y: number, plantId: number, spacing: number, plotIndex?: number) => void;
   removePlantFromCell: (gardenId: string, x: number, y: number, plotIndex?: number) => void;
   clearGarden: (gardenId: string) => void;
+  setGardenGrid: (gardenId: string, grid: Record<string, GridCell>) => void;
 }
 
 export const useGardenStore = create<GardenStore>()(
@@ -161,6 +162,13 @@ export const useGardenStore = create<GardenStore>()(
         set((state) => ({
           gardens: state.gardens.map((g) =>
             g.id === gardenId ? { ...g, grid: {} } : g
+          )
+        })),
+
+      setGardenGrid: (gardenId, grid) =>
+        set((state) => ({
+          gardens: state.gardens.map((g) =>
+            g.id === gardenId ? { ...g, grid } : g
           )
         }))
     }),

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles, Wand2 } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -14,13 +14,14 @@ import { useToast } from "@/hooks/use-toast";
 import { searchPlantDatabase, type PlantReference } from "@/lib/plant-database";
 import { getPlantingSchedule } from "@/lib/planting-schedule";
 import { useLocationData } from "@/hooks/use-location";
+import { AutoPlotDialog } from "@/components/AutoPlotDialog";
 
 type Tool = "plant" | "erase" | "inspect";
 
 export default function Planner() {
   const { id } = useParams();
   const garden = useGardenStore(state => state.gardens.find(g => g.id === id));
-  const { plantInCell, removePlantFromCell } = useGardenStore();
+  const { plantInCell, removePlantFromCell, setGardenGrid } = useGardenStore();
   
   const plants = usePlantStore(state => state.plants);
   const addPlant = usePlantStore(state => state.addPlant);
@@ -203,6 +204,23 @@ export default function Planner() {
           >
             {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </Button>
+          <AutoPlotDialog
+            garden={garden}
+            plants={plants}
+            onApply={(grid) => {
+              setGardenGrid(garden.id, grid);
+              toast({ title: "Auto Plot applied!", description: "Your garden has been populated with the selected plants." });
+            }}
+          >
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-auto-plot"
+              className="print-hidden"
+            >
+              <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Auto Plot
+            </Button>
+          </AutoPlotDialog>
           <Button
             variant="outline"
             size="sm"
