@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Loader2, Leaf } from "lucide-react";
+import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
-import { usePlants } from "@/hooks/use-plants";
+import { usePlantStore } from "@/hooks/use-plant-store";
+import { useTheme } from "@/hooks/use-theme";
 import { PlantingGrid } from "@/components/PlantingGrid";
 import { PlantCarePanel } from "@/components/PlantCarePanel";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,8 @@ export default function Planner() {
   const garden = useGardenStore(state => state.gardens.find(g => g.id === id));
   const { plantInCell, removePlantFromCell } = useGardenStore();
   
-  const { data: plants = [], isLoading } = usePlants();
+  const plants = usePlantStore(state => state.plants);
+  const { theme, toggleTheme } = useTheme();
   
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -25,7 +27,6 @@ export default function Planner() {
   const [selectedPlantId, setSelectedPlantId] = useState<number | null>(null);
   const [inspectedPlantId, setInspectedPlantId] = useState<number | null>(null);
 
-  // Derived filtered catalog
   const filteredPlants = useMemo(() => {
     return plants.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -39,7 +40,6 @@ export default function Planner() {
     return ["all", ...Array.from(types)];
   }, [plants]);
 
-  // Handlers
   const handleCellClick = (x: number, y: number) => {
     if (activeTool === "plant" && selectedPlantId) {
       const plant = plants.find(p => p.id === selectedPlantId);
@@ -54,7 +54,7 @@ export default function Planner() {
   const handleSelectPlant = (plantId: number) => {
     setSelectedPlantId(plantId);
     setActiveTool("plant");
-    setInspectedPlantId(plantId); // Show care info when selected
+    setInspectedPlantId(plantId);
   };
 
   const inspectedPlant = plants.find(p => p.id === inspectedPlantId);
@@ -74,7 +74,6 @@ export default function Planner() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* Top Navbar */}
       <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-4">
           <Link href="/">
@@ -85,41 +84,68 @@ export default function Planner() {
           <div className="h-6 w-px bg-border hidden sm:block" />
           <div>
             <h1 className="font-display text-lg font-bold text-foreground leading-tight">{garden.name}</h1>
-            <p className="text-xs text-muted-foreground">{garden.width}ft × {garden.length}ft Grid</p>
+            <p className="text-xs text-muted-foreground">
+              {garden.width}ft × {garden.length}ft Grid
+              {garden.season ? ` · ${garden.season}` : ""}
+            </p>
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex items-center bg-muted/50 p-1 rounded-xl border border-border/50">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => setActiveTool("inspect")}
-            className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "inspect" && "bg-background shadow-sm")}
+            size="icon"
+            onClick={toggleTheme}
+            data-testid="button-theme-toggle"
+            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            className="print-hidden"
           >
-            <MousePointer2 className="w-3.5 h-3.5 mr-1.5" /> Inspect
+            {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => setActiveTool("plant")}
-            className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "plant" && "bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground")}
+            data-testid="button-print-garden"
+            onClick={() => window.print()}
+            className="print-hidden"
           >
-            <Sprout className="w-3.5 h-3.5 mr-1.5" /> Plant
+            <Printer className="w-3.5 h-3.5 mr-1.5" /> Print
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setActiveTool("erase")}
-            className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "erase" && "bg-destructive text-destructive-foreground shadow-sm hover:text-destructive-foreground")}
-          >
-            <Eraser className="w-3.5 h-3.5 mr-1.5" /> Erase
-          </Button>
+          <div className="flex items-center bg-muted/50 p-1 rounded-xl border border-border/50 print-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTool("inspect")}
+              className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "inspect" && "bg-background shadow-sm")}
+            >
+              <MousePointer2 className="w-3.5 h-3.5 mr-1.5" /> Inspect
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTool("plant")}
+              className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "plant" && "bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground")}
+            >
+              <Sprout className="w-3.5 h-3.5 mr-1.5" /> Plant
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveTool("erase")}
+              className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "erase" && "bg-destructive text-destructive-foreground shadow-sm hover:text-destructive-foreground")}
+            >
+              <Eraser className="w-3.5 h-3.5 mr-1.5" /> Erase
+            </Button>
+          </div>
         </div>
       </header>
 
+      <div className="print-header hidden" style={{ alignItems: "baseline", gap: "1rem" }}>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>{garden.name}</h1>
+        <span style={{ fontSize: "0.875rem", color: "#666" }}>{garden.width}ft x {garden.length}ft{garden.season ? ` | ${garden.season}` : ""}</span>
+      </div>
+
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar: Catalog */}
         <aside className="w-80 border-r border-border bg-card flex flex-col flex-shrink-0 z-10 shadow-[4px_0_10px_rgba(0,0,0,0.02)]">
           <div className="p-4 border-b border-border shrink-0">
             <h2 className="font-semibold mb-3 flex items-center gap-2">
@@ -153,12 +179,7 @@ export default function Planner() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-                <Loader2 className="w-6 h-6 animate-spin mb-2" />
-                <span className="text-sm">Loading catalog...</span>
-              </div>
-            ) : filteredPlants.length === 0 ? (
+            {filteredPlants.length === 0 ? (
               <div className="text-center p-6 text-sm text-muted-foreground">
                 No plants found matching your search.
               </div>
@@ -196,7 +217,6 @@ export default function Planner() {
           </div>
         </aside>
 
-        {/* Main Grid Area */}
         <main className="flex-1 flex flex-col relative overflow-hidden bg-dot-pattern">
           <PlantingGrid 
             garden={garden} 
@@ -204,16 +224,32 @@ export default function Planner() {
             selectedTool={activeTool}
             selectedPlantId={selectedPlantId}
             onCellClick={handleCellClick}
-            onInspect={(id) => {
-              setInspectedPlantId(id);
-              // Switch to inspect tool if they click a plant while in a different mode (except erase)
+            onInspect={(plantId) => {
+              setInspectedPlantId(plantId);
               if (activeTool !== 'erase') setActiveTool('inspect');
             }}
           />
 
-          {/* Floating Care Panel */}
+          <div className="print-legend hidden" style={{ padding: "1rem 0" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: "bold", marginBottom: "0.5rem" }}>Plant Legend</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
+              {(() => {
+                const usedPlantIds = new Set(Object.values(garden.grid).map(cell => cell.plantId));
+                return plants
+                  .filter(p => usedPlantIds.has(p.id))
+                  .map(p => (
+                    <div key={p.id} style={{ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.8125rem" }}>
+                      <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: "hsl(135, 25%, 32%)", opacity: 0.6 + (p.id % 4) * 0.1 }} />
+                      <span>{p.name}</span>
+                      <span style={{ color: "#999", fontSize: "0.75rem" }}>({p.spacing}" spacing)</span>
+                    </div>
+                  ));
+              })()}
+            </div>
+          </div>
+
           {inspectedPlant && (
-            <div className="absolute bottom-6 left-6 right-6 pointer-events-none flex justify-center">
+            <div className="absolute bottom-6 left-6 right-6 pointer-events-none flex justify-center print-hidden">
               <div className="w-full max-w-2xl pointer-events-auto rounded-2xl overflow-hidden shadow-2xl border border-border/50 animate-in slide-in-from-bottom-8 fade-in duration-300">
                 <div className="absolute top-2 right-2 z-20">
                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground bg-background/50 backdrop-blur rounded-full hover:bg-background" onClick={() => setInspectedPlantId(null)}>
