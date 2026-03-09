@@ -89,7 +89,7 @@ export function DataManagerButtons() {
       } catch {
         toast({
           title: "Import failed",
-          description: "The selected file is not a valid Garden Planner export.",
+          description: "The selected file is not a valid TymFlo Garden export.",
           variant: "destructive",
         });
       }
