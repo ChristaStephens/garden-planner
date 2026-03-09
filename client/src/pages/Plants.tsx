@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Leaf, Sun, Moon, Droplets, Beaker, Heart, AlertTriangle, Trash2, Search } from "lucide-react";
+import { ArrowLeft, Plus, Leaf, Sun, Moon, Droplets, Beaker, Heart, AlertTriangle, Trash2, Search, Sparkles } from "lucide-react";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { searchPlantDatabase, type PlantReference } from "@/lib/plant-database";
 
 function AddPlantDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -20,12 +21,53 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
   const [fertilizer, setFertilizer] = useState("");
   const [companions, setCompanions] = useState("");
   const [incompatible, setIncompatible] = useState("");
+  const [autoFilled, setAutoFilled] = useState(false);
+  const [suggestions, setSuggestions] = useState<PlantReference[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const addPlant = usePlantStore(state => state.addPlant);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const resetForm = () => {
     setName(""); setType("Vegetable"); setSpacing("12");
     setSunlight("Full Sun"); setWater(""); setFertilizer("");
-    setCompanions(""); setIncompatible("");
+    setCompanions(""); setIncompatible(""); setAutoFilled(false);
+    setSuggestions([]); setShowSuggestions(false);
+  };
+
+  const handleNameChange = (value: string) => {
+    setName(value);
+    setAutoFilled(false);
+    if (value.length >= 2) {
+      const results = searchPlantDatabase(value);
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (ref: PlantReference) => {
+    setName(ref.name);
+    setType(ref.type);
+    setSpacing(String(ref.spacing));
+    setSunlight(ref.sunlight);
+    setWater(ref.water);
+    setFertilizer(ref.fertilizer);
+    setCompanions(ref.companionPlants.join(", "));
+    setIncompatible(ref.incompatiblePlants.join(", "));
+    setAutoFilled(true);
+    setShowSuggestions(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -45,7 +87,7 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[520px] rounded-2xl bg-card" aria-describedby="add-plant-description">
         <DialogHeader>
@@ -54,15 +96,55 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
           </div>
           <DialogTitle className="text-center text-2xl">Add a New Plant</DialogTitle>
           <DialogDescription id="add-plant-description" className="text-center text-muted-foreground">
-            Fill in the details for your plant. It will be added to your catalog.
+            Start typing a plant name to auto-fill from our database, or enter details manually.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-1">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 relative" ref={suggestionsRef}>
               <Label htmlFor="plant-name">Plant Name</Label>
-              <Input id="plant-name" data-testid="input-plant-name" placeholder="e.g. Zucchini" value={name} onChange={e => setName(e.target.value)} required />
+              <div className="relative">
+                <Input
+                  id="plant-name"
+                  data-testid="input-plant-name"
+                  placeholder="e.g. Zucchini"
+                  value={name}
+                  onChange={e => handleNameChange(e.target.value)}
+                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                  required
+                  autoComplete="off"
+                  className={cn(autoFilled && "border-primary/50 bg-primary/5")}
+                />
+                {autoFilled && (
+                  <Sparkles className="w-3.5 h-3.5 text-primary absolute right-2.5 top-1/2 -translate-y-1/2" />
+                )}
+              </div>
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.name}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(s)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted/70 transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
+                      data-testid={`suggestion-${s.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      <Leaf className="w-3.5 h-3.5 text-primary/60 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-foreground">{s.name}</span>
+                        <span className="text-muted-foreground ml-1.5 text-xs">{s.type} · {s.spacing}"</span>
+                      </div>
+                      <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+              {autoFilled && (
+                <div className="text-xs text-primary flex items-center gap-1.5 mt-1">
+                  <Sparkles className="w-3 h-3" /> Auto-filled from database
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="plant-type">Type</Label>
