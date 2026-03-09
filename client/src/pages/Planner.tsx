@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon } from "lucide-react";
+import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -8,7 +8,9 @@ import { PlantingGrid } from "@/components/PlantingGrid";
 import { PlantCarePanel } from "@/components/PlantCarePanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 type Tool = "plant" | "erase" | "inspect";
 
@@ -18,7 +20,9 @@ export default function Planner() {
   const { plantInCell, removePlantFromCell } = useGardenStore();
   
   const plants = usePlantStore(state => state.plants);
+  const addPlant = usePlantStore(state => state.addPlant);
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -26,6 +30,41 @@ export default function Planner() {
   const [activeTool, setActiveTool] = useState<Tool>("inspect");
   const [selectedPlantId, setSelectedPlantId] = useState<number | null>(null);
   const [inspectedPlantId, setInspectedPlantId] = useState<number | null>(null);
+
+  const [showAddPlant, setShowAddPlant] = useState(false);
+  const [newPlantName, setNewPlantName] = useState("");
+  const [newPlantType, setNewPlantType] = useState("Vegetable");
+  const [newPlantSpacing, setNewPlantSpacing] = useState("12");
+  const [newPlantSunlight, setNewPlantSunlight] = useState("Full Sun");
+  const [newPlantWater, setNewPlantWater] = useState("");
+  const [newPlantFertilizer, setNewPlantFertilizer] = useState("");
+
+  const handleAddPlant = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlantName.trim()) return;
+    const exists = plants.some(p => p.name.toLowerCase() === newPlantName.trim().toLowerCase());
+    if (exists) {
+      toast({ title: "Plant already exists", description: `"${newPlantName.trim()}" is already in your catalog.`, variant: "destructive" });
+      return;
+    }
+    const created = addPlant({
+      name: newPlantName.trim(),
+      type: newPlantType,
+      spacing: parseInt(newPlantSpacing) || 12,
+      sunlight: newPlantSunlight,
+      water: newPlantWater || "Moderate",
+      fertilizer: newPlantFertilizer || "Balanced",
+      companionPlants: [],
+      incompatiblePlants: [],
+    });
+    toast({ title: "Plant added", description: `${created.name} is now available in your catalog.` });
+    setNewPlantName("");
+    setNewPlantSpacing("12");
+    setNewPlantWater("");
+    setNewPlantFertilizer("");
+    setShowAddPlant(false);
+    handleSelectPlant(created.id);
+  };
 
   const filteredPlants = useMemo(() => {
     return plants.filter(p => {
@@ -213,6 +252,82 @@ export default function Planner() {
                   );
                 })}
               </div>
+            )}
+          </div>
+
+          <div className="border-t border-border shrink-0">
+            <button
+              onClick={() => setShowAddPlant(!showAddPlant)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-primary hover:bg-muted/50 transition-colors"
+              data-testid="button-toggle-add-plant"
+            >
+              <span className="flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Add New Plant
+              </span>
+              {showAddPlant ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+            {showAddPlant && (
+              <form onSubmit={handleAddPlant} className="px-4 pb-4 space-y-3">
+                <Input
+                  placeholder="Plant name"
+                  value={newPlantName}
+                  onChange={(e) => setNewPlantName(e.target.value)}
+                  required
+                  className="h-8 text-sm"
+                  data-testid="input-new-plant-name"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={newPlantType} onValueChange={setNewPlantType}>
+                    <SelectTrigger className="h-8 text-sm" data-testid="select-new-plant-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Vegetable">Vegetable</SelectItem>
+                      <SelectItem value="Herb">Herb</SelectItem>
+                      <SelectItem value="Flower">Flower</SelectItem>
+                      <SelectItem value="Fruit">Fruit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Spacing (in)"
+                    type="number"
+                    min="1"
+                    max="48"
+                    value={newPlantSpacing}
+                    onChange={(e) => setNewPlantSpacing(e.target.value)}
+                    className="h-8 text-sm"
+                    data-testid="input-new-plant-spacing"
+                  />
+                </div>
+                <Select value={newPlantSunlight} onValueChange={setNewPlantSunlight}>
+                  <SelectTrigger className="h-8 text-sm" data-testid="select-new-plant-sunlight">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Full Sun">Full Sun</SelectItem>
+                    <SelectItem value="Partial Sun">Partial Sun</SelectItem>
+                    <SelectItem value="Partial Shade">Partial Shade</SelectItem>
+                    <SelectItem value="Full Shade">Full Shade</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Water needs (optional)"
+                  value={newPlantWater}
+                  onChange={(e) => setNewPlantWater(e.target.value)}
+                  className="h-8 text-sm"
+                  data-testid="input-new-plant-water"
+                />
+                <Input
+                  placeholder="Fertilizer (optional)"
+                  value={newPlantFertilizer}
+                  onChange={(e) => setNewPlantFertilizer(e.target.value)}
+                  className="h-8 text-sm"
+                  data-testid="input-new-plant-fertilizer"
+                />
+                <Button type="submit" size="sm" className="w-full" data-testid="button-submit-new-plant">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Add to Catalog
+                </Button>
+              </form>
             )}
           </div>
         </aside>
