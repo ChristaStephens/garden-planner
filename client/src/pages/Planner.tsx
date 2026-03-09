@@ -127,14 +127,14 @@ export default function Planner() {
     return ["all", ...Array.from(types)];
   }, [plants]);
 
-  const handleCellClick = (x: number, y: number) => {
+  const handleCellClick = (x: number, y: number, plotIndex: number = 0) => {
     if (activeTool === "plant" && selectedPlantId) {
       const plant = plants.find(p => p.id === selectedPlantId);
       if (plant) {
-        plantInCell(garden!.id, x, y, selectedPlantId, plant.spacing);
+        plantInCell(garden!.id, x, y, selectedPlantId, plant.spacing, plotIndex);
       }
     } else if (activeTool === "erase") {
-      removePlantFromCell(garden!.id, x, y);
+      removePlantFromCell(garden!.id, x, y, plotIndex);
     }
   };
 
@@ -173,6 +173,7 @@ export default function Planner() {
             <h1 className="font-display text-lg font-bold text-foreground leading-tight">{garden.name}</h1>
             <p className="text-xs text-muted-foreground">
               {garden.width}ft × {garden.length}ft Grid
+              {(garden.plotCount || 1) > 1 ? ` · ${garden.plotCount} Plots` : ""}
               {garden.season ? ` · ${garden.season}` : ""}
             </p>
           </div>
@@ -439,17 +440,24 @@ export default function Planner() {
         </aside>
 
         <main className="flex-1 flex flex-col relative overflow-hidden bg-dot-pattern">
-          <PlantingGrid 
-            garden={garden} 
-            plants={plants} 
-            selectedTool={activeTool}
-            selectedPlantId={selectedPlantId}
-            onCellClick={handleCellClick}
-            onInspect={(plantId) => {
-              setInspectedPlantId(plantId);
-              if (activeTool !== 'erase') setActiveTool('inspect');
-            }}
-          />
+          <div className="flex-1 overflow-auto p-8 bg-muted/30 flex flex-wrap items-start justify-center gap-8 min-h-[500px]">
+            {Array.from({ length: garden.plotCount || 1 }).map((_, plotIdx) => (
+              <PlantingGrid
+                key={plotIdx}
+                garden={garden}
+                plants={plants}
+                selectedTool={activeTool}
+                selectedPlantId={selectedPlantId}
+                onCellClick={handleCellClick}
+                onInspect={(plantId) => {
+                  setInspectedPlantId(plantId);
+                  if (activeTool !== 'erase') setActiveTool('inspect');
+                }}
+                plotIndex={plotIdx}
+                plotLabel={(garden.plotCount || 1) > 1 ? `Plot ${plotIdx + 1}` : undefined}
+              />
+            ))}
+          </div>
 
           <div className="print-legend hidden" style={{ padding: "1rem 0" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: "bold", marginBottom: "0.5rem" }}>Plant Legend</h3>
