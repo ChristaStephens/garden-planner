@@ -10,6 +10,7 @@ export type GridCell = {
 export type GardenBox = {
   id: string;
   name: string;
+  season: string;
   width: number; // in feet
   length: number; // in feet
   grid: Record<string, GridCell>; // key is "x,y" e.g., "0,0"
@@ -18,9 +19,11 @@ export type GardenBox = {
 
 interface GardenStore {
   gardens: GardenBox[];
-  addGarden: (name: string, width: number, length: number) => string;
+  addGarden: (name: string, width: number, length: number, season?: string) => string;
   deleteGarden: (id: string) => void;
   updateGardenName: (id: string, name: string) => void;
+  duplicateGarden: (id: string) => string | null;
+  importGardens: (gardens: GardenBox[], plantIdMap?: Record<number, number>) => void;
   plantInCell: (gardenId: string, x: number, y: number, plantId: number, spacing: number) => void;
   removePlantFromCell: (gardenId: string, x: number, y: number) => void;
   clearGarden: (gardenId: string) => void;
@@ -31,12 +34,12 @@ export const useGardenStore = create<GardenStore>()(
     (set) => ({
       gardens: [],
       
-      addGarden: (name, width, length) => {
+      addGarden: (name, width, length, season = "") => {
         const id = uuidv4();
         set((state) => ({
           gardens: [
             ...state.gardens,
-            { id, name, width, length, grid: {}, createdAt: Date.now() },
+            { id, name, season, width, length, grid: {}, createdAt: Date.now() },
           ],
         }));
         return id;
@@ -53,6 +56,48 @@ export const useGardenStore = create<GardenStore>()(
             g.id === id ? { ...g, name } : g
           ),
         })),
+
+      duplicateGarden: (id) => {
+        const newId = uuidv4();
+        let found = false;
+        set((state) => {
+          const source = state.gardens.find((g) => g.id === id);
+          if (!source) return state;
+          found = true;
+          const copy: GardenBox = {
+            ...source,
+            id: newId,
+            name: `${source.name} (Copy)`,
+            grid: { ...source.grid },
+            createdAt: Date.now(),
+          };
+          return { gardens: [...state.gardens, copy] };
+        });
+        return found ? newId : null;
+      },
+
+      importGardens: (incoming, plantIdMap) => {
+        set((state) => {
+          const existingIds = new Set(state.gardens.map((g) => g.id));
+          const newGardens = incoming.map((g) => {
+            const newId = existingIds.has(g.id) ? uuidv4() : g.id;
+            let grid = g.grid;
+            if (plantIdMap && Object.keys(plantIdMap).length > 0) {
+              grid = {};
+              for (const [key, cell] of Object.entries(g.grid)) {
+                const mappedId = plantIdMap[cell.plantId];
+                if (mappedId !== undefined) {
+                  grid[key] = { ...cell, plantId: mappedId };
+                } else {
+                  grid[key] = cell;
+                }
+              }
+            }
+            return { ...g, id: newId, grid };
+          });
+          return { gardens: [...state.gardens, ...newGardens] };
+        });
+      },
 
       plantInCell: (gardenId, x, y, plantId, spacing) => 
         set((state) => {
