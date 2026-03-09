@@ -87,18 +87,24 @@ export default function Home() {
           <div className="lg:col-span-8">
             <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
               <h2 className="text-2xl font-semibold text-foreground">Your Plots</h2>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 <DataManagerButtons />
                 <Link href="/plants">
                   <Button variant="secondary" data-testid="link-plants-catalog" aria-label="View plant catalog">
                     <BookOpen className="w-4 h-4 mr-2" /> Plant Catalog
                   </Button>
                 </Link>
-                <CreateGardenDialog>
-                  <Button data-testid="button-new-plot">
-                    <Plus className="w-4 h-4 mr-2" /> New Plot
-                  </Button>
-                </CreateGardenDialog>
+                {gardens.length < 8 ? (
+                  <CreateGardenDialog>
+                    <Button data-testid="button-new-plot">
+                      <Plus className="w-4 h-4 mr-2" /> New Plot
+                    </Button>
+                  </CreateGardenDialog>
+                ) : (
+                  <span className="text-xs text-muted-foreground px-3 py-2 bg-muted rounded-lg" data-testid="text-max-plots">
+                    Max 8 plots reached
+                  </span>
+                )}
               </div>
             </div>
 
@@ -168,6 +174,7 @@ export default function Home() {
                                 variant="ghost"
                                 size="icon"
                                 className="text-muted-foreground"
+                                disabled={gardens.length >= 8}
                                 onClick={(e) => {
                                   e.preventDefault();
                                   duplicateGarden(garden.id);
