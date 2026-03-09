@@ -1,11 +1,24 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Sprout, Ruler } from "lucide-react";
+import { Sprout, Ruler, CalendarDays } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+function generateSeasonOptions(): string[] {
+  const currentYear = new Date().getFullYear();
+  const seasons = ["Spring", "Summer", "Fall", "Winter"];
+  const options: string[] = [];
+  for (let y = currentYear; y <= currentYear + 2; y++) {
+    for (const s of seasons) {
+      options.push(`${s} ${y}`);
+    }
+  }
+  return options;
+}
 
 export function CreateGardenDialog({ children }: { children: React.ReactNode }) {
   const [, setLocation] = useLocation();
@@ -15,6 +28,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const [name, setName] = useState("");
   const [width, setWidth] = useState("4");
   const [length, setLength] = useState("8");
+  const [season, setSeason] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +36,8 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
     const l = parseInt(length);
     
     if (name && w > 0 && l > 0) {
-      const id = addGarden(name, w, l);
+      const id = addGarden(name, w, l, season);
       setOpen(false);
-      // Redirect to planner
       setLocation(`/planner/${id}`);
     }
   };
@@ -56,6 +69,24 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
               required
               autoFocus
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="season" className="text-sm font-semibold flex items-center gap-1">
+              <CalendarDays className="w-3 h-3 text-muted-foreground" /> Season / Year
+            </Label>
+            <Select value={season} onValueChange={setSeason}>
+              <SelectTrigger id="season" data-testid="select-season">
+                <SelectValue placeholder="Select season (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {generateSeasonOptions().map((opt) => (
+                  <SelectItem key={opt} value={opt} data-testid={`select-season-${opt.replace(/\s/g, "-").toLowerCase()}`}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
