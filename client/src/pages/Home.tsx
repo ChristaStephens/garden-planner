@@ -137,8 +137,9 @@ export default function Home() {
                 aria-label="Garden plots"
               >
                 {gardens.map((garden) => {
+                  const plots = garden.plotCount || 1;
                   const plantedCount = Object.keys(garden.grid).length;
-                  const totalCells = garden.width * garden.length;
+                  const totalCells = garden.width * garden.length * plots;
                   const percentFilled = Math.round((plantedCount / totalCells) * 100) || 0;
 
                   return (
@@ -160,6 +161,7 @@ export default function Home() {
                                 <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                                   <Ruler className="w-3.5 h-3.5" />
                                   {garden.width}ft x {garden.length}ft
+                                  {plots > 1 ? ` · ${plots} plots` : ""}
                                 </p>
                                 {garden.season && (
                                   <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-medium" data-testid={`badge-season-${garden.id}`}>
