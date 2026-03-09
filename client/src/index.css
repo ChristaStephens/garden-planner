@@ -165,3 +165,51 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+@media print {
+  body {
+    background-image: none !important;
+    background-color: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-visible {
+    display: block !important;
+  }
+
+  header, aside, .glass-panel {
+    display: none !important;
+  }
+
+  .print-header {
+    display: flex !important;
+    padding: 1rem 0;
+    border-bottom: 2px solid #333;
+    margin-bottom: 1rem;
+  }
+
+  .print-legend {
+    display: block !important;
+    margin-top: 1rem;
+    page-break-inside: avoid;
+  }
+
+  main {
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  .flex-1 {
+    overflow: visible !important;
+  }
+
+  * {
+    box-shadow: none !important;
+  }
+}
