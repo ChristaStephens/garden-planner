@@ -1,14 +1,36 @@
+import { useMemo } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Leaf, Grid2X2, CalendarClock, ArrowRight, Trash2, Ruler, BookOpen } from "lucide-react";
+import { Plus, Leaf, Grid2X2, CalendarClock, ArrowRight, Trash2, Ruler, BookOpen, Sun, Moon, Copy, Sprout } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
+import { usePlantStore } from "@/hooks/use-plant-store";
+import { useTheme } from "@/hooks/use-theme";
 import { CreateGardenDialog } from "@/components/CreateGardenDialog";
 import { LocationWidget } from "@/components/LocationWidget";
+import { DataManagerButtons, ExportGardenButton } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const gardens = useGardenStore(state => state.gardens);
   const deleteGarden = useGardenStore(state => state.deleteGarden);
+  const duplicateGarden = useGardenStore(state => state.duplicateGarden);
+  const plants = usePlantStore(state => state.plants);
+  const { theme, toggleTheme } = useTheme();
+
+  const plantCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const garden of gardens) {
+      for (const cell of Object.values(garden.grid)) {
+        counts[cell.plantId] = (counts[cell.plantId] || 0) + cell.count;
+      }
+    }
+    return Object.entries(counts)
+      .map(([id, count]) => {
+        const plant = plants.find(p => p.id === Number(id));
+        return plant ? { name: plant.name, count } : null;
+      })
+      .filter(Boolean) as { name: string; count: number }[];
+  }, [gardens, plants]);
 
   const container = {
     hidden: { opacity: 0 },
@@ -40,6 +62,17 @@ export default function Home() {
               <h1 className="text-4xl md:text-5xl font-bold text-foreground">
                 Garden Planner
               </h1>
+              <div className="ml-auto">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  data-testid="button-theme-toggle"
+                  aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+                >
+                  {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                </Button>
+              </div>
             </div>
             <p className="text-muted-foreground text-lg max-w-xl pl-14">
               Design your perfect raised bed, track companion planting, and plan for the season.
@@ -54,7 +87,8 @@ export default function Home() {
           <div className="lg:col-span-8">
             <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
               <h2 className="text-2xl font-semibold text-foreground">Your Plots</h2>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <DataManagerButtons />
                 <Link href="/plants">
                   <Button variant="secondary" data-testid="link-plants-catalog" aria-label="View plant catalog">
                     <BookOpen className="w-4 h-4 mr-2" /> Plant Catalog
@@ -116,26 +150,49 @@ export default function Home() {
                               <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
                                 {garden.name}
                               </h3>
-                              <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-                                <Ruler className="w-3.5 h-3.5" />
-                                {garden.width}ft x {garden.length}ft
-                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                                  <Ruler className="w-3.5 h-3.5" />
+                                  {garden.width}ft x {garden.length}ft
+                                </p>
+                                {garden.season && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-medium" data-testid={`badge-season-${garden.id}`}>
+                                    {garden.season}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground -mt-2 -mr-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                if (confirm("Are you sure you want to delete this garden?")) {
-                                  deleteGarden(garden.id);
-                                }
-                              }}
-                              data-testid={`button-delete-garden-${garden.id}`}
-                              aria-label={`Delete ${garden.name}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-1 -mt-2 -mr-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <ExportGardenButton gardenId={garden.id} />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  duplicateGarden(garden.id);
+                                }}
+                                data-testid={`button-duplicate-garden-${garden.id}`}
+                                aria-label={`Duplicate ${garden.name}`}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-muted-foreground"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (confirm("Are you sure you want to delete this garden?")) {
+                                    deleteGarden(garden.id);
+                                  }
+                                }}
+                                data-testid={`button-delete-garden-${garden.id}`}
+                                aria-label={`Delete ${garden.name}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
 
                           <div className="mt-6">
@@ -171,6 +228,24 @@ export default function Home() {
 
           <aside className="lg:col-span-4 space-y-6" aria-label="Tools and information">
             <LocationWidget />
+
+            {plantCounts.length > 0 && (
+              <div className="bg-card rounded-2xl p-6 border border-border" data-testid="plant-count-summary">
+                <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
+                  <Sprout className="w-5 h-5 text-primary" aria-hidden="true" />
+                  Plant Summary
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">Total plants across all gardens — handy for seed shopping.</p>
+                <div className="space-y-2">
+                  {plantCounts.sort((a, b) => b.count - a.count).map(({ name, count }) => (
+                    <div key={name} className="flex items-center justify-between text-sm">
+                      <span className="text-foreground font-medium">{name}</span>
+                      <span className="text-muted-foreground font-mono text-xs bg-muted px-2 py-0.5 rounded-md">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="bg-card rounded-2xl p-6 border border-border">
               <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
