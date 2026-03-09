@@ -89,7 +89,7 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[520px] rounded-2xl bg-card" aria-describedby="add-plant-description">
+      <DialogContent className="sm:max-w-[520px] rounded-2xl bg-card overflow-visible" aria-describedby="add-plant-description">
         <DialogHeader>
           <div className="mx-auto w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-2">
             <Leaf className="w-6 h-6" />
@@ -101,51 +101,51 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-1">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5 relative" ref={suggestionsRef}>
-              <Label htmlFor="plant-name">Plant Name</Label>
-              <div className="relative">
-                <Input
-                  id="plant-name"
-                  data-testid="input-plant-name"
-                  placeholder="e.g. Zucchini"
-                  value={name}
-                  onChange={e => handleNameChange(e.target.value)}
-                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-                  required
-                  autoComplete="off"
-                  className={cn(autoFilled && "border-primary/50 bg-primary/5")}
-                />
-                {autoFilled && (
-                  <Sparkles className="w-3.5 h-3.5 text-primary absolute right-2.5 top-1/2 -translate-y-1/2" />
-                )}
-              </div>
+          <div className="space-y-1.5" ref={suggestionsRef}>
+            <Label htmlFor="plant-name">Plant Name</Label>
+            <div className="relative">
+              <Input
+                id="plant-name"
+                data-testid="input-plant-name"
+                placeholder="Start typing to search (e.g. Tomato, Basil, Pepper...)"
+                value={name}
+                onChange={e => handleNameChange(e.target.value)}
+                onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                required
+                autoComplete="off"
+                className={cn(autoFilled && "border-primary/50 bg-primary/5")}
+              />
+              {autoFilled && (
+                <Sparkles className="w-3.5 h-3.5 text-primary absolute right-2.5 top-1/2 -translate-y-1/2" />
+              )}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="absolute z-[100] top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-xl max-h-48 overflow-y-auto">
                   {suggestions.map((s) => (
                     <button
                       key={s.name}
                       type="button"
                       onClick={() => handleSelectSuggestion(s)}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted/70 transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
+                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted/70 transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
                       data-testid={`suggestion-${s.name.toLowerCase().replace(/\s+/g, "-")}`}
                     >
                       <Leaf className="w-3.5 h-3.5 text-primary/60 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-foreground">{s.name}</span>
-                        <span className="text-muted-foreground ml-1.5 text-xs">{s.type} · {s.spacing}"</span>
+                        <span className="text-muted-foreground ml-1.5 text-xs">{s.type} · {s.spacing}" spacing</span>
                       </div>
                       <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
                     </button>
                   ))}
                 </div>
               )}
-              {autoFilled && (
-                <div className="text-xs text-primary flex items-center gap-1.5 mt-1">
-                  <Sparkles className="w-3 h-3" /> Auto-filled from database
-                </div>
-              )}
             </div>
+            {autoFilled && (
+              <div className="text-xs text-primary flex items-center gap-1.5 mt-1">
+                <Sparkles className="w-3 h-3" /> Auto-filled from database
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="plant-type">Type</Label>
               <Select value={type} onValueChange={setType}>
@@ -160,9 +160,6 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="plant-spacing">Spacing (inches)</Label>
               <Input id="plant-spacing" data-testid="input-plant-spacing" type="number" min="1" max="48" value={spacing} onChange={e => setSpacing(e.target.value)} required />
