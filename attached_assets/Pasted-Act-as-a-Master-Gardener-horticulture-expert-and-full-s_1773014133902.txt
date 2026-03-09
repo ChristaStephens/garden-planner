@@ -1,0 +1,217 @@
+Act as a Master Gardener, horticulture expert, and full-stack web developer.
+
+I want to build a backyard garden planning web application that helps home gardeners design and manage their garden beds based on their location, available space, and seed choices.
+
+The application should be simple to use, visually intuitive, and helpful for beginner gardeners, while still following real horticulture best practices.
+
+Goal
+
+Create a browser-based garden planner web app that allows users to design their garden layout, choose plants, and receive planting guidance such as spacing, companion planting, watering, fertilizer, and sunlight requirements.
+
+The app must store garden information locally so the user does not have to re-enter their garden layout every time they open the app.
+
+Core Features
+1. Location-Based Growing Information
+
+The user should be able to enter:
+
+City
+
+State
+
+The app should then determine:
+
+USDA growing zone
+
+Typical frost dates
+
+Seasonal planting windows
+
+Basic weather information relevant to gardening
+
+2. Garden Layout Planner
+
+Users should be able to enter garden dimensions including:
+
+Width
+
+Length
+
+Depth (optional)
+
+The app should allow visualization of up to 8 garden boxes.
+
+Each garden box should:
+
+Display as a grid
+
+Show plant spacing
+
+Show how many plants fit in the box
+
+3. Seed Input System
+
+The user should be able to:
+
+Enter the name of seeds or plants they want to grow
+
+Select from a list or type manually
+
+The system should then pull or simulate plant information such as:
+
+Plant spacing requirements
+
+Companion plants
+
+Plants that should NOT be planted together
+
+Sunlight needs
+
+Water requirements
+
+Fertilizer recommendations
+
+4. Companion Planting Intelligence
+
+The system should help determine which plants should be planted together and which should be avoided.
+
+Guardrails must include:
+
+Compatible plant pairings
+
+Companion planting suggestions
+
+Warnings for incompatible plants
+
+5. Garden Box Grid Planner
+
+For each garden box:
+
+Create a visual grid layout that shows:
+
+What plants can be placed in the box
+
+Proper spacing between plants
+
+Multiple possible planting combinations
+
+Users should be able to:
+
+Generate variations of planting layouts
+
+Filter combinations by plant type
+
+Use checkboxes to select or deselect plants
+
+Example filters:
+
+Vegetables
+
+Herbs
+
+Flowers
+
+Pollinator-friendly plants
+
+6. Plant Care Guidance
+
+For every plant selected, the app should display helpful tips including:
+
+Watering requirements
+
+Fertilizer guidance
+
+Sunlight requirements
+
+Companion plants
+
+Plant spacing
+
+7. Persistent Data Storage
+
+The application must save the user's garden information locally using:
+
+Local storage or IndexedDB
+
+When the user returns to the app:
+
+Their garden layout should automatically load
+
+Their seed selections should remain saved
+
+Users should also have the ability to:
+
+Reset their garden
+
+Start a new layout
+
+User Experience Requirements
+
+The interface should include:
+
+Clean garden visualization
+
+Drag-and-drop or clickable plant placement
+
+Simple grid layout for garden boxes
+
+Beginner-friendly instructions
+
+The goal is to make the app feel like a visual planning tool rather than a spreadsheet.
+
+Technical Requirements
+
+Build the application using:
+
+HTML
+
+CSS
+
+JavaScript
+
+Organize files like this:
+
+index.html
+styles.css
+app.js
+plants.js
+gardenPlanner.js
+data/
+
+Optional enhancements:
+
+Responsive design
+
+Light animations for plant placement
+
+Expandable plant database
+
+Deliverables
+
+Please generate:
+
+A complete app architecture
+
+Starter HTML, CSS, and JavaScript code
+
+A simple plant database structure
+
+Instructions for running the project in Replit
+
+Suggestions for expanding the app in the future
+
+Success Criteria
+
+The app should allow a user to:
+
+Enter their location
+
+Design up to 8 garden boxes
+
+Add seeds or plants
+
+Receive companion planting suggestions
+
+Generate multiple layout variations
+
+Save their garden plan automatically
