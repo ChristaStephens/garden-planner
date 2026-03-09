@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Leaf, Sun, Droplets, Beaker, Heart, AlertTriangle, Trash2, Search, Loader2 } from "lucide-react";
-import { usePlants } from "@/hooks/use-plants";
+import { ArrowLeft, Plus, Leaf, Sun, Moon, Droplets, Beaker, Heart, AlertTriangle, Trash2, Search } from "lucide-react";
+import { usePlantStore } from "@/hooks/use-plant-store";
+import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { queryClient } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
-import { api } from "@shared/routes";
 
 function AddPlantDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -22,24 +20,7 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
   const [fertilizer, setFertilizer] = useState("");
   const [companions, setCompanions] = useState("");
   const [incompatible, setIncompatible] = useState("");
-
-  const createMutation = useMutation({
-    mutationFn: async (data: Record<string, unknown>) => {
-      const res = await fetch(api.plants.create.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to create plant");
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.plants.list.path] });
-      setOpen(false);
-      resetForm();
-    },
-  });
+  const addPlant = usePlantStore(state => state.addPlant);
 
   const resetForm = () => {
     setName(""); setType("Vegetable"); setSpacing("12");
@@ -49,7 +30,7 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate({
+    addPlant({
       name,
       type,
       spacing: parseInt(spacing),
@@ -59,6 +40,8 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
       companionPlants: companions.split(",").map(s => s.trim()).filter(Boolean),
       incompatiblePlants: incompatible.split(",").map(s => s.trim()).filter(Boolean),
     });
+    setOpen(false);
+    resetForm();
   };
 
   return (
@@ -141,8 +124,8 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
 
           <DialogFooter className="pt-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" data-testid="button-add-plant" disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+            <Button type="submit" data-testid="button-add-plant">
+              <Plus className="w-4 h-4 mr-2" />
               Add Plant
             </Button>
           </DialogFooter>
@@ -153,19 +136,11 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
 }
 
 export default function Plants() {
-  const { data: plants = [], isLoading } = usePlants();
+  const plants = usePlantStore(state => state.plants);
+  const deletePlant = usePlantStore(state => state.deletePlant);
+  const { theme, toggleTheme } = useTheme();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const res = await fetch(`/api/plants/${id}`, { method: "DELETE", credentials: "include" });
-      if (!res.ok) throw new Error("Failed to delete");
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.plants.list.path] });
-    },
-  });
 
   const filteredPlants = plants.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -190,11 +165,22 @@ export default function Plants() {
               <p className="text-sm text-muted-foreground">{plants.length} plants on file</p>
             </div>
           </div>
-          <AddPlantDialog>
-            <Button data-testid="button-new-plant">
-              <Plus className="w-4 h-4 mr-2" /> Add Plant
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              data-testid="button-theme-toggle"
+              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+            >
+              {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </Button>
-          </AddPlantDialog>
+            <AddPlantDialog>
+              <Button data-testid="button-new-plant">
+                <Plus className="w-4 h-4 mr-2" /> Add Plant
+              </Button>
+            </AddPlantDialog>
+          </div>
         </div>
       </header>
 
@@ -231,12 +217,7 @@ export default function Plants() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-muted-foreground">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />
-            Loading plants...
-          </div>
-        ) : filteredPlants.length === 0 ? (
+        {filteredPlants.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <Leaf className="w-12 h-12 mx-auto mb-4 opacity-30" />
             <p className="text-lg font-medium">No plants found</p>
@@ -266,7 +247,7 @@ export default function Plants() {
                     size="icon"
                     className="text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                     onClick={() => {
-                      if (confirm(`Delete ${plant.name}?`)) deleteMutation.mutate(plant.id);
+                      if (confirm(`Delete ${plant.name}?`)) deletePlant(plant.id);
                     }}
                     data-testid={`button-delete-plant-${plant.id}`}
                     aria-label={`Delete ${plant.name}`}
@@ -294,13 +275,13 @@ export default function Plants() {
                   {plant.companionPlants.length > 0 && (
                     <div className="flex items-center gap-1 text-xs">
                       <Heart className="w-3 h-3 text-primary shrink-0" />
-                      <span className="text-muted-foreground">{(plant.companionPlants as string[]).join(", ")}</span>
+                      <span className="text-muted-foreground">{plant.companionPlants.join(", ")}</span>
                     </div>
                   )}
                   {plant.incompatiblePlants.length > 0 && (
                     <div className="flex items-center gap-1 text-xs">
                       <AlertTriangle className="w-3 h-3 text-destructive shrink-0" />
-                      <span className="text-muted-foreground">{(plant.incompatiblePlants as string[]).join(", ")}</span>
+                      <span className="text-muted-foreground">{plant.incompatiblePlants.join(", ")}</span>
                     </div>
                   )}
                 </div>
