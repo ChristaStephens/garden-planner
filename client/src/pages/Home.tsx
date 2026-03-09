@@ -11,7 +11,7 @@ import { DataManagerButtons, ExportGardenButton } from "@/components/DataManager
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getPlantingSchedule, getZoneTips } from "@/lib/planting-schedule";
-import { lookupZoneByState } from "@/lib/zone-data";
+import { useLocationData } from "@/hooks/use-location";
 import tymfloIcon from "@assets/Tymflo-icon-crlPng_-_Copy_1773094205484.png";
 import tymfloLogo from "@assets/Tymflo-horizontal-crlPng_-_Copy_1773094208868.png";
 
@@ -22,12 +22,7 @@ export default function Home() {
   const plants = usePlantStore(state => state.plants);
   const { theme, toggleTheme } = useTheme();
 
-  const savedCity = typeof window !== "undefined" ? localStorage.getItem("garden-city") || "" : "";
-  const savedState = typeof window !== "undefined" ? localStorage.getItem("garden-state") || "" : "";
-  const savedZoneData = useMemo(() => {
-    if (!savedState) return null;
-    return lookupZoneByState(savedState, savedCity);
-  }, [savedCity, savedState]);
+  const { zoneData: savedZoneData } = useLocationData();
 
   const zoneTips = useMemo(() => {
     if (!savedZoneData) return null;

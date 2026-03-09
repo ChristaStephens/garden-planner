@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { searchPlantDatabase, type PlantReference } from "@/lib/plant-database";
 import { getPlantingSchedule } from "@/lib/planting-schedule";
-import { lookupZoneByState } from "@/lib/zone-data";
+import { useLocationData } from "@/hooks/use-location";
 
 type Tool = "plant" | "erase" | "inspect";
 
@@ -27,11 +27,8 @@ export default function Planner() {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   
+  const { zoneData } = useLocationData();
   const plantTimingMap = useMemo(() => {
-    const savedState = localStorage.getItem("garden-state") || "";
-    const savedCity = localStorage.getItem("garden-city") || "";
-    if (!savedState) return {};
-    const zoneData = lookupZoneByState(savedState, savedCity);
     if (!zoneData) return {};
     const schedule = getPlantingSchedule(zoneData.lastFrost, plants.map(p => p.name));
     const map: Record<string, { status: string; label: string }> = {};
@@ -39,7 +36,7 @@ export default function Planner() {
       map[s.name] = { status: s.status, label: s.statusLabel };
     }
     return map;
-  }, [plants]);
+  }, [plants, zoneData]);
 
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");

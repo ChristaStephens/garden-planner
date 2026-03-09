@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MapPin, ThermometerSnowflake, Sun, Search, Loader2 } from "lucide-react";
-import { useLocation } from "@/hooks/use-location";
+import { useLocation, dispatchLocationChange } from "@/hooks/use-location";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -21,6 +21,7 @@ export function LocationWidget() {
       localStorage.setItem("garden-city", cityInput);
       localStorage.setItem("garden-state", stateInput);
       setSearchParams({ city: cityInput, state: stateInput });
+      dispatchLocationChange();
     }
   };
 
