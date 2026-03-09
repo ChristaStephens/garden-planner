@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ORGANIC EARTH TONES THEME */
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Fraunces', serif;
+
+  /* Cream/Off-white background */
+  --background: 40 33% 98%; 
+  --foreground: 140 20% 15%;
+
+  /* Sage/Olive Green Primary */
+  --primary: 135 25% 32%;
+  --primary-foreground: 60 30% 98%;
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l - 10) / 1);
+
+  /* Earthy Terracotta Secondary */
+  --secondary: 25 35% 45%;
+  --secondary-foreground: 60 30% 98%;
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l - 10) / 1);
+
+  /* Soft Green Muted */
+  --muted: 120 15% 92%;
+  --muted-foreground: 140 10% 40%;
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l - 5) / 1);
+
+  /* Warm Accent */
+  --accent: 40 40% 85%;
+  --accent-foreground: 140 20% 20%;
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l - 5) / 1);
+
+  /* Destructive/Warning (Muted Red/Orange) */
+  --destructive: 10 50% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l - 10) / 1);
+
+  /* Cards and Surfaces */
+  --card: 0 0% 100%;
+  --card-foreground: 140 20% 15%;
+  --card-border: 40 20% 90%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 140 20% 15%;
+  --popover-border: 40 20% 90%;
+
+  --border: 40 20% 85%;
+  --input: 40 20% 85%;
+  --ring: 135 25% 32%;
+
+  --radius: 0.75rem;
+
+  /* Subtle, earthy shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.02);
+  --shadow: 0 4px 6px -1px rgb(40 60 40 / 0.05), 0 2px 4px -2px rgb(40 60 40 / 0.05);
+  --shadow-md: 0 10px 15px -3px rgb(40 60 40 / 0.05), 0 4px 6px -4px rgb(40 60 40 / 0.05);
+  --shadow-lg: 0 20px 25px -5px rgb(40 60 40 / 0.08), 0 8px 10px -6px rgb(40 60 40 / 0.05);
+
+  --elevate-1: rgba(44, 94, 59, 0.04);
+  --elevate-2: rgba(44, 94, 59, 0.08);
+}
+
+.dark {
+  /* Dark Mode: Deep Forest Theme */
+  --background: 140 20% 8%;
+  --foreground: 60 20% 90%;
+
+  --primary: 135 20% 45%;
+  --primary-foreground: 140 20% 10%;
+  --primary-border: hsl(from hsl(var(--primary)) h s calc(l + 10) / 1);
+
+  --secondary: 25 30% 55%;
+  --secondary-foreground: 140 20% 10%;
+  --secondary-border: hsl(from hsl(var(--secondary)) h s calc(l + 10) / 1);
+
+  --muted: 140 15% 15%;
+  --muted-foreground: 60 10% 60%;
+  --muted-border: hsl(from hsl(var(--muted)) h s calc(l + 5) / 1);
+
+  --accent: 140 20% 20%;
+  --accent-foreground: 60 20% 90%;
+  --accent-border: hsl(from hsl(var(--accent)) h s calc(l + 5) / 1);
+
+  --destructive: 0 40% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + 10) / 1);
+
+  --card: 140 18% 11%;
+  --card-foreground: 60 20% 90%;
+  --card-border: 140 15% 20%;
+
+  --popover: 140 18% 11%;
+  --popover-foreground: 60 20% 90%;
+  --popover-border: 140 15% 20%;
+
+  --border: 140 15% 20%;
+  --input: 140 15% 20%;
+  --ring: 135 20% 45%;
+
+  --elevate-1: rgba(255, 255, 255, 0.05);
+  --elevate-2: rgba(255, 255, 255, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20;
+    font-family: var(--font-sans);
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232c5e3b' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply font-normal tracking-tight;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  
+  .glass-panel {
+    @apply bg-background/80 backdrop-blur-md border border-border shadow-lg;
+  }
+
+  /* Soil texture for grid cells */
+  .soil-texture {
+    background-color: hsl(var(--card));
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  /* Interaction elevations */
+  .hover-elevate { position: relative; z-index: 0; }
+  .hover-elevate::after {
+    content: ""; pointer-events: none; position: absolute; inset: 0px;
+    border-radius: inherit; z-index: 999; transition: background-color 0.2s;
+  }
+  .hover-elevate:hover::after { background-color: var(--elevate-1); }
+  
+  .active-elevate-2 { position: relative; z-index: 0; }
+  .active-elevate-2::after {
+    content: ""; pointer-events: none; position: absolute; inset: 0px;
+    border-radius: inherit; z-index: 999; transition: background-color 0.1s;
+  }
+  .active-elevate-2:active::after { background-color: var(--elevate-2); }
+  
+  .border.hover-elevate::after { inset: -1px; }
+}
+
+/* Custom Scrollbar for organic feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
