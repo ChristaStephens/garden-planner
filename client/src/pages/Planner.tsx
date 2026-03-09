@@ -286,8 +286,21 @@ export default function Planner() {
                           : "border-transparent hover:bg-muted/50"
                       )}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center shrink-0 border border-primary/10">
-                        <Leaf className={cn("w-5 h-5", isSelected ? "text-primary" : "text-primary/60")} />
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0 border",
+                        plant.type.toLowerCase() === "vegetable" ? "bg-green-500/20 border-green-500/30" :
+                        plant.type.toLowerCase() === "herb" ? "bg-amber-400/20 border-amber-400/30" :
+                        plant.type.toLowerCase() === "flower" ? "bg-pink-400/20 border-pink-400/30" :
+                        plant.type.toLowerCase() === "fruit" ? "bg-orange-400/20 border-orange-400/30" :
+                        "bg-primary/20 border-primary/10"
+                      )}>
+                        <Leaf className={cn("w-5 h-5",
+                          plant.type.toLowerCase() === "vegetable" ? "text-green-600 dark:text-green-400" :
+                          plant.type.toLowerCase() === "herb" ? "text-amber-500 dark:text-amber-400" :
+                          plant.type.toLowerCase() === "flower" ? "text-pink-500 dark:text-pink-400" :
+                          plant.type.toLowerCase() === "fruit" ? "text-orange-500 dark:text-orange-400" :
+                          isSelected ? "text-primary" : "text-primary/60"
+                        )} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm truncate text-foreground">{plant.name}</h4>
@@ -440,7 +453,10 @@ export default function Planner() {
         </aside>
 
         <main className="flex-1 flex flex-col relative overflow-hidden bg-dot-pattern">
-          <div className="flex-1 overflow-auto p-8 bg-muted/30 flex flex-wrap items-start justify-center gap-8 min-h-[500px]">
+          <div className={cn(
+            "flex-1 overflow-auto bg-muted/30 flex flex-wrap items-start justify-center min-h-[500px]",
+            (garden.plotCount || 1) > 1 ? "p-4 gap-4 content-start" : "p-8 gap-8"
+          )}>
             {Array.from({ length: garden.plotCount || 1 }).map((_, plotIdx) => (
               <PlantingGrid
                 key={plotIdx}
@@ -455,6 +471,7 @@ export default function Planner() {
                 }}
                 plotIndex={plotIdx}
                 plotLabel={(garden.plotCount || 1) > 1 ? `Plot ${plotIdx + 1}` : undefined}
+                compact={(garden.plotCount || 1) > 1}
               />
             ))}
           </div>
