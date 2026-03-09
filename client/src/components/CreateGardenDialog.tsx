@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Sprout, Ruler, CalendarDays } from "lucide-react";
+import { Sprout, Ruler, CalendarDays, Grid2X2 } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 function generateSeasonOptions(): string[] {
   const currentYear = new Date().getFullYear();
@@ -29,6 +30,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const [width, setWidth] = useState("4");
   const [length, setLength] = useState("8");
   const [season, setSeason] = useState("");
+  const [plotCount, setPlotCount] = useState(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +38,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
     const l = parseInt(length);
     
     if (name && w > 0 && l > 0) {
-      const id = addGarden(name, w, l, season);
+      const id = addGarden(name, w, l, season, plotCount);
       setOpen(false);
       setLocation(`/planner/${id}`);
     }
@@ -68,6 +70,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
               onChange={(e) => setName(e.target.value)}
               required
               autoFocus
+              data-testid="input-garden-name"
             />
           </div>
           
@@ -88,6 +91,33 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold flex items-center gap-1">
+              <Grid2X2 className="w-3 h-3 text-muted-foreground" /> Number of Plots
+            </Label>
+            <div className="grid grid-cols-4 gap-2" data-testid="plot-count-selector">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPlotCount(n)}
+                  className={cn(
+                    "h-10 rounded-lg border-2 text-sm font-semibold transition-all",
+                    plotCount === n
+                      ? "border-primary bg-primary/10 text-primary shadow-sm"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/50"
+                  )}
+                  data-testid={`button-plot-count-${n}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Each plot is a separate raised bed with its own grid for planting.
+            </p>
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -101,6 +131,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
                 value={width}
                 onChange={(e) => setWidth(e.target.value)}
                 required
+                data-testid="input-garden-width"
               />
             </div>
             <div className="space-y-2">
@@ -114,6 +145,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
                 value={length}
                 onChange={(e) => setLength(e.target.value)}
                 required
+                data-testid="input-garden-length"
               />
             </div>
           </div>
@@ -122,8 +154,8 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" className="w-full sm:w-auto">
-              Create Plot
+            <Button type="submit" className="w-full sm:w-auto" data-testid="button-create-plot">
+              Create {plotCount > 1 ? `${plotCount} Plots` : "Plot"}
             </Button>
           </DialogFooter>
         </form>
