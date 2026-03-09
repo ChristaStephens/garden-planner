@@ -57,8 +57,8 @@ export default function Home() {
 
         <div className="relative z-10 max-w-6xl mx-auto w-full px-6 pb-8">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <div className="flex items-center gap-3 mb-2">
-              <img src={tymfloLogo} alt="TymFlo Garden" className="h-10" />
+            <div className="flex items-center gap-3 mb-4">
+              <img src={tymfloLogo} alt="TymFlo Garden" className="h-10" data-testid="img-logo" />
               <div className="ml-auto">
                 <Button
                   variant="ghost"
@@ -71,7 +71,7 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-            <p className="text-muted-foreground text-lg max-w-xl pl-[60px]">
+            <p className="text-muted-foreground text-lg max-w-xl">
               Design your perfect raised bed, track companion planting, and plan for the season.
             </p>
           </motion.div>
