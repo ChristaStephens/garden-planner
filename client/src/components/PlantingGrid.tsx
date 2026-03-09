@@ -136,7 +136,8 @@ export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, on
                 "relative rounded-sm bg-[#4a3525] border border-[#5c4033]/50 flex items-center justify-center transition-all cursor-pointer overflow-hidden",
                 selectedTool === 'plant' && "hover:bg-[#5a422e]",
                 selectedTool === 'erase' && cellPlant && "hover:bg-destructive/30",
-                selectedTool === 'inspect' && cellPlant && "hover:bg-primary/30 ring-2 ring-transparent hover:ring-primary z-10"
+                selectedTool === 'inspect' && cellPlant && "hover:bg-primary/30 ring-2 ring-transparent hover:ring-primary z-10",
+                status === 'bad' && "cell-incompatible"
               )}
               title={cellPlant ? `${cellPlant.name} (${cellPlant.type})` : `${x},${y}`}
             >
@@ -146,9 +147,6 @@ export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, on
                 </span>
               )}
 
-              {status === 'bad' && (
-                <div className="absolute inset-0 ring-2 ring-destructive ring-inset z-20 animate-pulse bg-destructive/10 pointer-events-none" />
-              )}
               {status === 'good' && (
                 <div className="absolute inset-0 ring-2 ring-primary ring-inset z-20 bg-primary/10 pointer-events-none" />
               )}
