@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Leaf, Grid2X2, CalendarClock, ArrowRight, Trash2, Ruler, BookOpen, Sun, Moon, Copy, Sprout } from "lucide-react";
+import { Plus, Grid2X2, CalendarClock, ArrowRight, Trash2, Ruler, BookOpen, Sun, Moon, Copy, Sprout, Leaf } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -9,6 +9,8 @@ import { CreateGardenDialog } from "@/components/CreateGardenDialog";
 import { LocationWidget } from "@/components/LocationWidget";
 import { DataManagerButtons, ExportGardenButton } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
+import tymfloIcon from "@assets/Tymflo-icon-crlPng_-_Copy_1773094205484.png";
+import tymfloLogo from "@assets/Tymflo-horizontal-crlPng_-_Copy_1773094208868.png";
 
 export default function Home() {
   const gardens = useGardenStore(state => state.gardens);
@@ -56,11 +58,10 @@ export default function Home() {
         <div className="relative z-10 max-w-6xl mx-auto w-full px-6 pb-8">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-primary text-primary-foreground rounded-xl" aria-hidden="true">
-                <Leaf className="w-6 h-6" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-                Garden Planner
+              <img src={tymfloIcon} alt="TymFlo" className="w-12 h-12" />
+              <img src={tymfloLogo} alt="TymFlo Garden" className="h-10 hidden sm:block" />
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground sm:hidden">
+                TymFlo Garden
               </h1>
               <div className="ml-auto">
                 <Button
@@ -74,7 +75,7 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-            <p className="text-muted-foreground text-lg max-w-xl pl-14">
+            <p className="text-muted-foreground text-lg max-w-xl pl-[60px]">
               Design your perfect raised bed, track companion planting, and plan for the season.
             </p>
           </motion.div>
