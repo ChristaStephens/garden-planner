@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { searchPlantDatabase, type PlantReference } from "@/lib/plant-database";
 
 type Tool = "plant" | "erase" | "inspect";
 
@@ -38,6 +39,56 @@ export default function Planner() {
   const [newPlantSunlight, setNewPlantSunlight] = useState("Full Sun");
   const [newPlantWater, setNewPlantWater] = useState("");
   const [newPlantFertilizer, setNewPlantFertilizer] = useState("");
+  const [newPlantCompanions, setNewPlantCompanions] = useState<string[]>([]);
+  const [newPlantIncompatible, setNewPlantIncompatible] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<PlantReference[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handlePlantNameChange = (value: string) => {
+    setNewPlantName(value);
+    setAutoFilled(false);
+    const matches = searchPlantDatabase(value);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  };
+
+  const handleSelectSuggestion = (ref: PlantReference) => {
+    setNewPlantName(ref.name);
+    setNewPlantType(ref.type);
+    setNewPlantSpacing(String(ref.spacing));
+    setNewPlantSunlight(ref.sunlight);
+    setNewPlantWater(ref.water);
+    setNewPlantFertilizer(ref.fertilizer);
+    setNewPlantCompanions(ref.companionPlants);
+    setNewPlantIncompatible(ref.incompatiblePlants);
+    setShowSuggestions(false);
+    setAutoFilled(true);
+  };
+
+  const resetNewPlantForm = () => {
+    setNewPlantName("");
+    setNewPlantType("Vegetable");
+    setNewPlantSpacing("12");
+    setNewPlantSunlight("Full Sun");
+    setNewPlantWater("");
+    setNewPlantFertilizer("");
+    setNewPlantCompanions([]);
+    setNewPlantIncompatible([]);
+    setAutoFilled(false);
+    setSuggestions([]);
+  };
 
   const handleAddPlant = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,14 +105,11 @@ export default function Planner() {
       sunlight: newPlantSunlight,
       water: newPlantWater || "Moderate",
       fertilizer: newPlantFertilizer || "Balanced",
-      companionPlants: [],
-      incompatiblePlants: [],
+      companionPlants: newPlantCompanions,
+      incompatiblePlants: newPlantIncompatible,
     });
     toast({ title: "Plant added", description: `${created.name} is now available in your catalog.` });
-    setNewPlantName("");
-    setNewPlantSpacing("12");
-    setNewPlantWater("");
-    setNewPlantFertilizer("");
+    resetNewPlantForm();
     setShowAddPlant(false);
     handleSelectPlant(created.id);
   };
@@ -268,14 +316,46 @@ export default function Planner() {
             </button>
             {showAddPlant && (
               <form onSubmit={handleAddPlant} className="px-4 pb-4 space-y-3">
-                <Input
-                  placeholder="Plant name"
-                  value={newPlantName}
-                  onChange={(e) => setNewPlantName(e.target.value)}
-                  required
-                  className="h-8 text-sm"
-                  data-testid="input-new-plant-name"
-                />
+                <div className="relative" ref={suggestionsRef}>
+                  <Input
+                    placeholder="Start typing a plant name..."
+                    value={newPlantName}
+                    onChange={(e) => handlePlantNameChange(e.target.value)}
+                    onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                    required
+                    className={cn("h-8 text-sm pr-8", autoFilled && "border-primary/50 bg-primary/5")}
+                    data-testid="input-new-plant-name"
+                    autoComplete="off"
+                  />
+                  {autoFilled && (
+                    <Sparkles className="w-3.5 h-3.5 text-primary absolute right-2.5 top-1/2 -translate-y-1/2" />
+                  )}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {suggestions.map((s) => (
+                        <button
+                          key={s.name}
+                          type="button"
+                          onClick={() => handleSelectSuggestion(s)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted/70 transition-colors flex items-center gap-2 border-b border-border/30 last:border-0"
+                          data-testid={`suggestion-${s.name.toLowerCase().replace(/\s+/g, "-")}`}
+                        >
+                          <Leaf className="w-3.5 h-3.5 text-primary/60 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <span className="font-medium text-foreground">{s.name}</span>
+                            <span className="text-muted-foreground ml-1.5 text-xs">{s.type} · {s.spacing}" spacing</span>
+                          </div>
+                          <Sparkles className="w-3 h-3 text-primary/40 shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {autoFilled && (
+                  <div className="text-xs text-primary flex items-center gap-1.5 -mt-1">
+                    <Sparkles className="w-3 h-3" /> Auto-filled from plant database
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <Select value={newPlantType} onValueChange={setNewPlantType}>
                     <SelectTrigger className="h-8 text-sm" data-testid="select-new-plant-type">
@@ -308,6 +388,8 @@ export default function Planner() {
                     <SelectItem value="Partial Sun">Partial Sun</SelectItem>
                     <SelectItem value="Partial Shade">Partial Shade</SelectItem>
                     <SelectItem value="Full Shade">Full Shade</SelectItem>
+                    <SelectItem value="Full to Partial Sun">Full to Partial Sun</SelectItem>
+                    <SelectItem value="Full to Partial Shade">Full to Partial Shade</SelectItem>
                   </SelectContent>
                 </Select>
                 <Input
@@ -324,6 +406,30 @@ export default function Planner() {
                   className="h-8 text-sm"
                   data-testid="input-new-plant-fertilizer"
                 />
+                {(newPlantCompanions.length > 0 || newPlantIncompatible.length > 0) && (
+                  <div className="space-y-2 p-2.5 bg-muted/40 rounded-lg border border-border/50">
+                    {newPlantCompanions.length > 0 && (
+                      <div>
+                        <span className="text-xs font-semibold text-green-600 dark:text-green-400">Companions:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {newPlantCompanions.map(c => (
+                            <span key={c} className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {newPlantIncompatible.length > 0 && (
+                      <div>
+                        <span className="text-xs font-semibold text-red-600 dark:text-red-400">Avoid planting near:</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {newPlantIncompatible.map(c => (
+                            <span key={c} className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300">{c}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Button type="submit" size="sm" className="w-full" data-testid="button-submit-new-plant">
                   <Plus className="w-3.5 h-3.5 mr-1.5" /> Add to Catalog
                 </Button>
