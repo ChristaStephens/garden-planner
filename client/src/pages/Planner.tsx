@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { searchPlantDatabase, type PlantReference } from "@/lib/plant-database";
+import { getPlantingSchedule } from "@/lib/planting-schedule";
+import { lookupZoneByState } from "@/lib/zone-data";
 
 type Tool = "plant" | "erase" | "inspect";
 
@@ -25,6 +27,20 @@ export default function Planner() {
   const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
   
+  const plantTimingMap = useMemo(() => {
+    const savedState = localStorage.getItem("garden-state") || "";
+    const savedCity = localStorage.getItem("garden-city") || "";
+    if (!savedState) return {};
+    const zoneData = lookupZoneByState(savedState, savedCity);
+    if (!zoneData) return {};
+    const schedule = getPlantingSchedule(zoneData.lastFrost, plants.map(p => p.name));
+    const map: Record<string, { status: string; label: string }> = {};
+    for (const s of schedule) {
+      map[s.name] = { status: s.status, label: s.statusLabel };
+    }
+    return map;
+  }, [plants]);
+
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   
@@ -303,7 +319,20 @@ export default function Planner() {
                         )} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm truncate text-foreground">{plant.name}</h4>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-semibold text-sm truncate text-foreground">{plant.name}</h4>
+                          {plantTimingMap[plant.name] && (
+                            <span className={cn(
+                              "text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0",
+                              plantTimingMap[plant.name].status === "now" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+                              plantTimingMap[plant.name].status === "soon" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                              plantTimingMap[plant.name].status === "past" && "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300",
+                              plantTimingMap[plant.name].status === "later" && "bg-muted text-muted-foreground"
+                            )}>
+                              {plantTimingMap[plant.name].label}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span className="capitalize">{plant.type}</span>
                           <span className="w-1 h-1 rounded-full bg-border" />

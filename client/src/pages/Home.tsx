@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { Plus, Grid2X2, CalendarClock, ArrowRight, Trash2, Ruler, BookOpen, Sun, Moon, Copy, Sprout, Leaf } from "lucide-react";
+import { Plus, Grid2X2, CalendarClock, ArrowRight, Trash2, Ruler, BookOpen, Sun, Moon, Copy, Sprout, Leaf, Clock, Snowflake } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -9,6 +9,9 @@ import { CreateGardenDialog } from "@/components/CreateGardenDialog";
 import { LocationWidget } from "@/components/LocationWidget";
 import { DataManagerButtons, ExportGardenButton } from "@/components/DataManager";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { getPlantingSchedule, getZoneTips } from "@/lib/planting-schedule";
+import { lookupZoneByState } from "@/lib/zone-data";
 import tymfloIcon from "@assets/Tymflo-icon-crlPng_-_Copy_1773094205484.png";
 import tymfloLogo from "@assets/Tymflo-horizontal-crlPng_-_Copy_1773094208868.png";
 
@@ -18,6 +21,24 @@ export default function Home() {
   const duplicateGarden = useGardenStore(state => state.duplicateGarden);
   const plants = usePlantStore(state => state.plants);
   const { theme, toggleTheme } = useTheme();
+
+  const savedCity = typeof window !== "undefined" ? localStorage.getItem("garden-city") || "" : "";
+  const savedState = typeof window !== "undefined" ? localStorage.getItem("garden-state") || "" : "";
+  const savedZoneData = useMemo(() => {
+    if (!savedState) return null;
+    return lookupZoneByState(savedState, savedCity);
+  }, [savedCity, savedState]);
+
+  const zoneTips = useMemo(() => {
+    if (!savedZoneData) return null;
+    return getZoneTips(savedZoneData.lastFrost, savedZoneData.firstFrost, savedZoneData.zone);
+  }, [savedZoneData]);
+
+  const plantSchedule = useMemo(() => {
+    if (!savedZoneData) return [];
+    const plantNames = plants.map(p => p.name);
+    return getPlantingSchedule(savedZoneData.lastFrost, plantNames);
+  }, [savedZoneData, plants]);
 
   const plantCounts = useMemo(() => {
     const counts: Record<number, number> = {};
@@ -253,24 +274,57 @@ export default function Home() {
               </div>
             )}
 
+            {plantSchedule.length > 0 && (
+              <div className="bg-card rounded-2xl p-6 border border-border" data-testid="planting-schedule">
+                <h3 className="font-semibold text-foreground flex items-center gap-2 mb-1">
+                  <Clock className="w-5 h-5 text-primary" aria-hidden="true" />
+                  When to Plant
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">Based on your {savedZoneData?.zone} frost dates.</p>
+                <div className="space-y-2">
+                  {plantSchedule.slice(0, 10).map(({ name, directSow, startIndoors, status, statusLabel, coldHardy }) => (
+                    <div key={name} className="flex items-center justify-between gap-2 text-sm py-1.5 border-b border-border/30 last:border-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {coldHardy && <Snowflake className="w-3 h-3 text-blue-400 shrink-0" />}
+                        <span className="text-foreground font-medium truncate">{name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-muted-foreground">{directSow}</span>
+                        <span className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap",
+                          status === "now" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+                          status === "soon" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                          status === "later" && "bg-muted text-muted-foreground",
+                          status === "past" && "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300"
+                        )}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {plantSchedule.length > 10 && (
+                  <p className="text-xs text-muted-foreground mt-3 text-center">+ {plantSchedule.length - 10} more plants in your catalog</p>
+                )}
+              </div>
+            )}
+
             <div className="bg-card rounded-2xl p-6 border border-border">
               <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
                 <Leaf className="w-5 h-5 text-primary" aria-hidden="true" />
-                Beginner Tips
+                {savedZoneData ? "Growing Tips" : "Beginner Tips"}
               </h3>
               <ul className="space-y-3 text-sm text-muted-foreground" aria-label="Gardening tips">
-                <li className="flex gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" aria-hidden="true" />
-                  <p>Place taller plants on the north side of your box so they don't shade shorter ones.</p>
-                </li>
-                <li className="flex gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" aria-hidden="true" />
-                  <p>Pay attention to companion warnings! Some plants secrete chemicals that stunt others.</p>
-                </li>
-                <li className="flex gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" aria-hidden="true" />
-                  <p>Don't forget spacing. A crowded garden is prone to disease and poor yields.</p>
-                </li>
+                {(zoneTips || [
+                  "Place taller plants on the north side of your box so they don't shade shorter ones.",
+                  "Pay attention to companion warnings! Some plants secrete chemicals that stunt others.",
+                  "Don't forget spacing. A crowded garden is prone to disease and poor yields.",
+                ]).map((tip, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" aria-hidden="true" />
+                    <p>{tip}</p>
+                  </li>
+                ))}
               </ul>
             </div>
 
