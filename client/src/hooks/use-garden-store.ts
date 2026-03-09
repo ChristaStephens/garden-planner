@@ -36,13 +36,18 @@ export const useGardenStore = create<GardenStore>()(
       
       addGarden: (name, width, length, season = "") => {
         const id = uuidv4();
-        set((state) => ({
-          gardens: [
-            ...state.gardens,
-            { id, name, season, width, length, grid: {}, createdAt: Date.now() },
-          ],
-        }));
-        return id;
+        let added = false;
+        set((state) => {
+          if (state.gardens.length >= 8) return state;
+          added = true;
+          return {
+            gardens: [
+              ...state.gardens,
+              { id, name, season, width, length, grid: {}, createdAt: Date.now() },
+            ],
+          };
+        });
+        return added ? id : "";
       },
       
       deleteGarden: (id) => 
@@ -61,6 +66,7 @@ export const useGardenStore = create<GardenStore>()(
         const newId = uuidv4();
         let found = false;
         set((state) => {
+          if (state.gardens.length >= 8) return state;
           const source = state.gardens.find((g) => g.id === id);
           if (!source) return state;
           found = true;
@@ -78,8 +84,10 @@ export const useGardenStore = create<GardenStore>()(
 
       importGardens: (incoming, plantIdMap) => {
         set((state) => {
+          const remaining = 8 - state.gardens.length;
+          if (remaining <= 0) return state;
           const existingIds = new Set(state.gardens.map((g) => g.id));
-          const newGardens = incoming.map((g) => {
+          const newGardens = incoming.slice(0, remaining).map((g) => {
             const newId = existingIds.has(g.id) ? uuidv4() : g.id;
             let grid = g.grid;
             if (plantIdMap && Object.keys(plantIdMap).length > 0) {
