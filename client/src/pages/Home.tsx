@@ -58,11 +58,7 @@ export default function Home() {
         <div className="relative z-10 max-w-6xl mx-auto w-full px-6 pb-8">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <div className="flex items-center gap-3 mb-2">
-              <img src={tymfloIcon} alt="TymFlo" className="w-12 h-12" />
-              <img src={tymfloLogo} alt="TymFlo Garden" className="h-10 hidden sm:block" />
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground sm:hidden">
-                TymFlo Garden
-              </h1>
+              <img src={tymfloLogo} alt="TymFlo Garden" className="h-10" />
               <div className="ml-auto">
                 <Button
                   variant="ghost"
