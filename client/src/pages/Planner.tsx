@@ -317,7 +317,7 @@ export default function Planner() {
             )}
           </div>
 
-          <div className="border-t border-border shrink-0">
+          <div className="border-t border-border shrink-0 overflow-visible relative">
             <button
               onClick={() => setShowAddPlant(!showAddPlant)}
               className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-primary hover:bg-muted/50 transition-colors"
@@ -345,7 +345,7 @@ export default function Planner() {
                     <Sparkles className="w-3.5 h-3.5 text-primary absolute right-2.5 top-1/2 -translate-y-1/2" />
                   )}
                   {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-50 bottom-full left-0 right-0 mb-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {suggestions.map((s) => (
                         <button
                           key={s.name}
