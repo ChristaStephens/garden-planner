@@ -480,8 +480,10 @@ export default function Planner() {
 
         <main className="flex-1 flex flex-col relative overflow-hidden bg-dot-pattern">
           <div className={cn(
-            "flex-1 overflow-auto bg-muted/30 flex flex-wrap items-start justify-center min-h-[500px]",
-            (garden.plotCount || 1) > 1 ? "p-4 gap-4 content-start" : "p-8 gap-8"
+            "flex-1 overflow-auto bg-muted/30 min-h-[500px]",
+            (garden.plotCount || 1) > 1
+              ? "grid grid-cols-4 auto-rows-min gap-4 p-4 items-start"
+              : "flex items-start justify-center p-8"
           )}>
             {Array.from({ length: garden.plotCount || 1 }).map((_, plotIdx) => (
               <PlantingGrid

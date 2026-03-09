@@ -96,8 +96,8 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
             <Label className="text-sm font-semibold flex items-center gap-1">
               <Grid2X2 className="w-3 h-3 text-muted-foreground" /> Number of Plots
             </Label>
-            <div className="grid grid-cols-4 gap-2" data-testid="plot-count-selector">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+            <div className="grid grid-cols-6 gap-2" data-testid="plot-count-selector">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
                 <button
                   key={n}
                   type="button"

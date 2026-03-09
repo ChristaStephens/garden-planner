@@ -107,7 +107,7 @@ export default function Home() {
                     <BookOpen className="w-4 h-4 mr-2" /> Plant Catalog
                   </Button>
                 </Link>
-                {gardens.length < 8 ? (
+                {gardens.length < 12 ? (
                   <CreateGardenDialog>
                     <Button data-testid="button-new-plot">
                       <Plus className="w-4 h-4 mr-2" /> New Plot
@@ -115,7 +115,7 @@ export default function Home() {
                   </CreateGardenDialog>
                 ) : (
                   <span className="text-xs text-muted-foreground px-3 py-2 bg-muted rounded-lg" data-testid="text-max-plots">
-                    Max 8 plots reached
+                    Max 12 plots reached
                   </span>
                 )}
               </div>
@@ -189,7 +189,7 @@ export default function Home() {
                                 variant="ghost"
                                 size="icon"
                                 className="text-muted-foreground"
-                                disabled={gardens.length >= 8}
+                                disabled={gardens.length >= 12}
                                 onClick={(e) => {
                                   e.preventDefault();
                                   duplicateGarden(garden.id);
