@@ -57,6 +57,7 @@ export function autoPlot(
 
   if (selectedPlants.length === 0) return { grid, placements, unplaced };
 
+  const totalCells = width * length;
   const groups = groupByWaterSun(selectedPlants);
   groups.sort((a, b) => b.length - a.length);
 
@@ -75,9 +76,7 @@ export function autoPlot(
 
       for (let p = 0; p < plotCount; p++) {
         const existing = plotAssignments[p];
-        const totalCells = width * length;
-        const usedCells = existing.length;
-        if (usedCells >= totalCells) continue;
+        if (existing.length >= totalCells) continue;
 
         let score = 0;
         let hasIncompat = false;
@@ -93,7 +92,6 @@ export function autoPlot(
         }
 
         if (hasIncompat) continue;
-
         if (existing.length === 0) score += 0.5;
 
         if (score > bestScore) {
@@ -105,16 +103,7 @@ export function autoPlot(
       if (bestPlot >= 0) {
         plotAssignments[bestPlot].push(plant);
       } else {
-        for (let p = 0; p < plotCount; p++) {
-          if (plotAssignments[p].length < width * length) {
-            plotAssignments[p].push(plant);
-            bestPlot = p;
-            break;
-          }
-        }
-        if (bestPlot < 0) {
-          unplaced.push(plant.id);
-        }
+        unplaced.push(plant.id);
       }
     }
   }
@@ -132,48 +121,107 @@ export function autoPlot(
     });
 
     for (const plant of sorted) {
-      let bestCell: [number, number] | null = null;
-      let bestCellScore = -Infinity;
-
-      for (let y = 0; y < length; y++) {
-        for (let x = 0; x < width; x++) {
-          const localKey = `${x},${y}`;
-          if (placed.has(localKey)) continue;
-
-          let score = 0;
-          const neighbors = getNeighborCoords(x, y);
-          for (const [nx, ny] of neighbors) {
-            const nKey = `${nx},${ny}`;
-            if (!placed.has(nKey)) continue;
-            const nFullKey = cellKey(plotIdx, nx, ny);
-            const nCell = grid[nFullKey];
-            if (!nCell) continue;
-            const nPlant = plantsById.get(nCell.plantId);
-            if (!nPlant) continue;
-
-            if (isCompanion(plant, nPlant)) score += 5;
-            if (isIncompatible(plant, nPlant)) score -= 10;
-          }
-
-          if (score > bestCellScore) {
-            bestCellScore = score;
-            bestCell = [x, y];
-          }
-        }
-      }
-
-      if (bestCell) {
-        const [bx, by] = bestCell;
+      const cell = findBestCell(plant, plotIdx, width, length, placed, grid, plantsById);
+      if (cell) {
+        const [bx, by] = cell;
         const key = cellKey(plotIdx, bx, by);
         const maxPerFoot = Math.max(1, Math.floor(144 / (plant.spacing * plant.spacing)));
         grid[key] = { plantId: plant.id, count: maxPerFoot };
         placements.push({ plantId: plant.id, plotIndex: plotIdx, x: bx, y: by });
         placed.add(`${bx},${by}`);
-      } else {
-        unplaced.push(plant.id);
+      }
+    }
+
+    const emptyCells: [number, number][] = [];
+    for (let y = 0; y < length; y++) {
+      for (let x = 0; x < width; x++) {
+        if (!placed.has(`${x},${y}`)) emptyCells.push([x, y]);
+      }
+    }
+
+    if (emptyCells.length > 0 && sorted.length > 0) {
+      for (const [ex, ey] of emptyCells) {
+        let bestPlant: Plant | null = null;
+        let bestScore = -Infinity;
+
+        for (const plant of sorted) {
+          let score = 0;
+          let blocked = false;
+          const neighbors = getNeighborCoords(ex, ey);
+
+          for (const [nx, ny] of neighbors) {
+            const nKey = cellKey(plotIdx, nx, ny);
+            const nCell = grid[nKey];
+            if (!nCell) continue;
+            const nPlant = plantsById.get(nCell.plantId);
+            if (!nPlant) continue;
+
+            if (isIncompatible(plant, nPlant)) { blocked = true; break; }
+            if (isCompanion(plant, nPlant)) score += 5;
+            if (plant.id === nPlant.id) score += 2;
+          }
+
+          if (blocked) continue;
+          if (score > bestScore) {
+            bestScore = score;
+            bestPlant = plant;
+          }
+        }
+
+        if (bestPlant) {
+          const key = cellKey(plotIdx, ex, ey);
+          const maxPerFoot = Math.max(1, Math.floor(144 / (bestPlant.spacing * bestPlant.spacing)));
+          grid[key] = { plantId: bestPlant.id, count: maxPerFoot };
+          placements.push({ plantId: bestPlant.id, plotIndex: plotIdx, x: ex, y: ey });
+          placed.add(`${ex},${ey}`);
+        }
       }
     }
   }
 
   return { grid, placements, unplaced };
+}
+
+function findBestCell(
+  plant: Plant,
+  plotIdx: number,
+  width: number,
+  length: number,
+  placed: Set<string>,
+  grid: Record<string, GridCell>,
+  plantsById: Map<number, Plant>
+): [number, number] | null {
+  let bestCell: [number, number] | null = null;
+  let bestCellScore = -Infinity;
+
+  for (let y = 0; y < length; y++) {
+    for (let x = 0; x < width; x++) {
+      if (placed.has(`${x},${y}`)) continue;
+
+      let score = 0;
+      let blocked = false;
+      const neighbors = getNeighborCoords(x, y);
+
+      for (const [nx, ny] of neighbors) {
+        const nKey = `${nx},${ny}`;
+        if (!placed.has(nKey)) continue;
+        const nFullKey = cellKey(plotIdx, nx, ny);
+        const nCell = grid[nFullKey];
+        if (!nCell) continue;
+        const nPlant = plantsById.get(nCell.plantId);
+        if (!nPlant) continue;
+
+        if (isIncompatible(plant, nPlant)) { blocked = true; break; }
+        if (isCompanion(plant, nPlant)) score += 5;
+      }
+
+      if (blocked) continue;
+      if (score > bestCellScore) {
+        bestCellScore = score;
+        bestCell = [x, y];
+      }
+    }
+  }
+
+  return bestCell;
 }
