@@ -15,6 +15,7 @@ interface PlantingGridProps {
   onInspect: (plantId: number) => void;
   plotIndex: number;
   plotLabel?: string;
+  compact?: boolean;
 }
 
 function evaluateCell(x: number, y: number, currentPlantId: number, grid: Record<string, GridCellLike>, plants: Plant[]) {
@@ -50,7 +51,25 @@ function evaluateCell(x: number, y: number, currentPlantId: number, grid: Record
 
 type GridCellLike = { plantId: number; count: number };
 
-export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, onCellClick, onInspect, plotIndex, plotLabel }: PlantingGridProps) {
+const TYPE_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  vegetable: { bg: "bg-green-600/80", text: "text-green-100", dot: "bg-green-500" },
+  herb:      { bg: "bg-amber-500/80", text: "text-amber-100", dot: "bg-amber-400" },
+  flower:    { bg: "bg-pink-500/80",  text: "text-pink-100",  dot: "bg-pink-400" },
+  fruit:     { bg: "bg-orange-500/80", text: "text-orange-100", dot: "bg-orange-400" },
+};
+
+function getTypeColor(type: string) {
+  return TYPE_COLORS[type.toLowerCase()] || TYPE_COLORS.vegetable;
+}
+
+function abbreviateName(name: string): string {
+  const words = name.split(/\s+/);
+  if (name.length <= 5) return name;
+  if (words.length === 1) return name.slice(0, 4);
+  return words.map(w => w[0]).join("").toUpperCase().slice(0, 4);
+}
+
+export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, onCellClick, onInspect, plotIndex, plotLabel, compact = false }: PlantingGridProps) {
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
 
   const plotGrid = useMemo(() => getPlotGrid(garden.grid, plotIndex), [garden.grid, plotIndex]);
@@ -67,21 +86,23 @@ export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, on
 
   const activePlant = plants.find(p => p.id === selectedPlantId);
 
+  const cellSize = compact ? "48px" : "80px";
+
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 shrink-0">
       {plotLabel && (
         <div className="text-sm font-semibold text-foreground/70 font-heading" data-testid={`text-plot-label-${plotIndex}`}>
           {plotLabel}
         </div>
       )}
       <div
-        className="soil-texture shadow-2xl rounded-xl border-4 border-[#5c4033] p-4 relative"
+        className="soil-texture shadow-2xl rounded-xl border-4 border-[#5c4033] p-2 relative"
         data-testid={`grid-plot-${plotIndex}`}
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${garden.width}, minmax(80px, 1fr))`,
-          gridTemplateRows: `repeat(${garden.length}, minmax(80px, 1fr))`,
-          gap: '4px',
+          gridTemplateColumns: `repeat(${garden.width}, ${cellSize})`,
+          gridTemplateRows: `repeat(${garden.length}, ${cellSize})`,
+          gap: compact ? '2px' : '4px',
           backgroundColor: '#3d2b1f',
         }}
       >
@@ -97,7 +118,7 @@ export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, on
             status = evaluateCell(x, y, activePlant.id, plotGrid, plants);
           }
 
-          const rotation = ((x * 13 + y * 7) % 4) * 90;
+          const typeColor = cellPlant ? getTypeColor(cellPlant.type) : null;
 
           return (
             <div
@@ -112,15 +133,18 @@ export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, on
                 }
               }}
               className={cn(
-                "relative rounded-sm aspect-square bg-[#4a3525] border border-[#5c4033]/50 flex items-center justify-center transition-all cursor-pointer overflow-hidden",
+                "relative rounded-sm bg-[#4a3525] border border-[#5c4033]/50 flex items-center justify-center transition-all cursor-pointer overflow-hidden",
                 selectedTool === 'plant' && "hover:bg-[#5a422e]",
                 selectedTool === 'erase' && cellPlant && "hover:bg-destructive/30",
                 selectedTool === 'inspect' && cellPlant && "hover:bg-primary/30 ring-2 ring-transparent hover:ring-primary z-10"
               )}
+              title={cellPlant ? `${cellPlant.name} (${cellPlant.type})` : `${x},${y}`}
             >
-              <span className="absolute bottom-1 right-1 text-[9px] text-white/20 font-mono pointer-events-none">
-                {x},{y}
-              </span>
+              {!compact && (
+                <span className="absolute bottom-0.5 right-1 text-[9px] text-white/20 font-mono pointer-events-none">
+                  {x},{y}
+                </span>
+              )}
 
               {status === 'bad' && (
                 <div className="absolute inset-0 ring-2 ring-destructive ring-inset z-20 animate-pulse bg-destructive/10 pointer-events-none" />
@@ -130,62 +154,64 @@ export function PlantingGrid({ garden, plants, selectedTool, selectedPlantId, on
               )}
 
               <AnimatePresence mode="wait">
-                {cellPlant ? (
+                {cellPlant && typeColor ? (
                   <motion.div
                     key={`plant-${key}`}
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                    className="w-full h-full flex flex-col items-center justify-center p-1"
+                    className="w-full h-full flex flex-col items-center justify-center"
                   >
-                    {cellData.count > 1 ? (
-                       <div className="flex flex-wrap items-center justify-center gap-1 w-full h-full">
-                         {Array.from({ length: Math.min(cellData.count, 9) }).map((_, i) => (
-                           <div
-                             key={i}
-                             className="w-3 h-3 rounded-full bg-primary shadow-sm"
-                             style={{ opacity: 0.8 + (Math.random() * 0.2) }}
-                            />
-                         ))}
-                         {cellData.count > 9 && <span className="text-[8px] font-bold text-white/80">+{cellData.count-9}</span>}
-                       </div>
-                    ) : (
-                      <div
-                        className="w-[70%] h-[70%] bg-gradient-to-br from-primary to-green-800 rounded-full shadow-md relative"
-                        style={{ transform: `rotate(${rotation}deg)` }}
-                      >
-                         <div className="absolute top-1 right-1 w-2 h-2 bg-green-300 rounded-full opacity-50" />
-                      </div>
-                    )}
+                    <div className={cn(
+                      "rounded-full shadow-md flex items-center justify-center",
+                      typeColor.dot,
+                      compact ? "w-7 h-7" : "w-[60%] h-[60%]"
+                    )}>
+                      <span className={cn(
+                        "font-bold text-white drop-shadow-sm",
+                        compact ? "text-[8px]" : "text-[10px]"
+                      )}>
+                        {abbreviateName(cellPlant.name)}
+                      </span>
+                    </div>
 
                     {status === 'bad' && (
-                      <div className="absolute -top-1 -right-1 bg-destructive text-white rounded-full p-0.5 z-30 shadow-md">
-                        <AlertCircle className="w-3 h-3" />
+                      <div className="absolute -top-0.5 -right-0.5 bg-destructive text-white rounded-full p-0.5 z-30 shadow-md">
+                        <AlertCircle className={compact ? "w-2.5 h-2.5" : "w-3 h-3"} />
                       </div>
                     )}
                     {status === 'good' && (
-                      <div className="absolute -top-1 -right-1 bg-primary text-white rounded-full p-0.5 z-30 shadow-md">
-                        <Heart className="w-3 h-3" />
+                      <div className="absolute -top-0.5 -right-0.5 bg-primary text-white rounded-full p-0.5 z-30 shadow-md">
+                        <Heart className={compact ? "w-2.5 h-2.5" : "w-3 h-3"} />
                       </div>
                     )}
 
-                    <span className="absolute bottom-1 w-[90%] text-center text-[10px] font-semibold text-white truncate bg-black/40 rounded px-1 backdrop-blur-sm pointer-events-none z-10">
-                      {cellPlant.name}
-                    </span>
+                    {!compact && (
+                      <span className={cn(
+                        "absolute bottom-0.5 w-[90%] text-center text-[9px] font-semibold truncate rounded px-0.5 backdrop-blur-sm pointer-events-none z-10",
+                        typeColor.bg, typeColor.text
+                      )}>
+                        {cellPlant.name}
+                      </span>
+                    )}
                   </motion.div>
                 ) : null}
               </AnimatePresence>
 
               {isHovered && !cellPlant && selectedTool === 'plant' && activePlant && (
                 <div className="absolute inset-0 opacity-40 flex items-center justify-center pointer-events-none">
-                  <div className="w-[70%] h-[70%] bg-primary rounded-full border-2 border-dashed border-white/50" />
+                  <div className={cn(
+                    "rounded-full border-2 border-dashed border-white/50",
+                    compact ? "w-7 h-7" : "w-[60%] h-[60%]",
+                    activePlant ? getTypeColor(activePlant.type).dot : "bg-primary"
+                  )} />
                 </div>
               )}
 
               {isHovered && cellPlant && selectedTool === 'erase' && (
                 <div className="absolute inset-0 flex items-center justify-center bg-destructive/80 z-40 text-white rounded-sm pointer-events-none">
-                  <Trash2 className="w-6 h-6" />
+                  <Trash2 className={compact ? "w-4 h-4" : "w-6 h-6"} />
                 </div>
               )}
             </div>
