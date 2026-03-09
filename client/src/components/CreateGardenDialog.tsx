@@ -28,7 +28,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [width, setWidth] = useState("4");
-  const [length, setLength] = useState("8");
+  const [length, setLength] = useState("4");
   const [season, setSeason] = useState("");
   const [plotCount, setPlotCount] = useState(1);
 
