@@ -39,13 +39,21 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const [selectedPlantIds, setSelectedPlantIds] = useState<Set<number>>(new Set());
   const [plantDropdownOpen, setPlantDropdownOpen] = useState(false);
   const [plantSearch, setPlantSearch] = useState("");
+  const [plantFilter, setPlantFilter] = useState("all");
+
+  const plantTypes = useMemo(() => {
+    const types = new Set(plants.map(p => p.type));
+    return ["all", ...Array.from(types).sort()];
+  }, [plants]);
 
   const sortedFilteredPlants = useMemo(() => {
     const sorted = [...plants].sort((a, b) => a.name.localeCompare(b.name));
-    if (!plantSearch.trim()) return sorted;
-    const q = plantSearch.toLowerCase();
-    return sorted.filter(p => p.name.toLowerCase().includes(q));
-  }, [plants, plantSearch]);
+    return sorted.filter(p => {
+      const matchesSearch = !plantSearch.trim() || p.name.toLowerCase().includes(plantSearch.toLowerCase());
+      const matchesFilter = plantFilter === "all" || p.type === plantFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [plants, plantSearch, plantFilter]);
 
   const togglePlant = (id: number) => {
     setSelectedPlantIds(prev => {
@@ -76,7 +84,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const resetForm = () => {
     setName(""); setWidth("4"); setLength("4"); setSeason("");
     setPlotCount(1); setAutoPopulate(false); setSelectedPlantIds(new Set());
-    setPlantDropdownOpen(false); setPlantSearch("");
+    setPlantDropdownOpen(false); setPlantSearch(""); setPlantFilter("all");
   };
 
   return (
@@ -248,6 +256,24 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
                     onChange={e => setPlantSearch(e.target.value)}
                     data-testid="input-search-auto-populate"
                   />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {plantTypes.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setPlantFilter(t)}
+                      className={cn(
+                        "px-2.5 py-1 text-[11px] font-medium rounded-full capitalize transition-colors",
+                        plantFilter === t
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      )}
+                      data-testid={`button-plant-filter-${t}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
                 <div className="border border-border rounded-xl max-h-[200px] overflow-y-auto bg-background">
                   {sortedFilteredPlants.length === 0 ? (
