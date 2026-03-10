@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles, Wand2, Trash2 } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -21,7 +21,7 @@ type Tool = "plant" | "erase" | "inspect";
 export default function Planner() {
   const { id } = useParams();
   const garden = useGardenStore(state => state.gardens.find(g => g.id === id));
-  const { plantInCell, removePlantFromCell, setGardenGrid } = useGardenStore();
+  const { plantInCell, removePlantFromCell, setGardenGrid, clearGarden } = useGardenStore();
   
   const plants = usePlantStore(state => state.plants);
   const addPlant = usePlantStore(state => state.addPlant);
@@ -221,6 +221,20 @@ export default function Planner() {
               <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Auto Plot
             </Button>
           </AutoPlotDialog>
+          <Button
+            variant="outline"
+            size="sm"
+            data-testid="button-clear-all-plots"
+            onClick={() => {
+              if (garden && confirm("Clear all plants from every plot? This cannot be undone.")) {
+                clearGarden(garden.id);
+                toast({ title: "Plots cleared", description: "All plants have been removed from your plots." });
+              }
+            }}
+            className="print-hidden"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Clear All
+          </Button>
           <Button
             variant="outline"
             size="sm"
