@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Leaf, Sun, Moon, Droplets, Beaker, Heart, AlertTriangle, Trash2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Leaf, Sun, Moon, Droplets, Beaker, Heart, AlertTriangle, Trash2, Search, Sparkles, Database } from "lucide-react";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { searchPlantDatabase, type PlantReference } from "@/lib/plant-database";
+import { searchPlantDatabase, PLANT_DATABASE, type PlantReference } from "@/lib/plant-database";
+import { useToast } from "@/hooks/use-toast";
 
 function AddPlantDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -216,10 +217,39 @@ function AddPlantDialog({ children }: { children: React.ReactNode }) {
 
 export default function Plants() {
   const plants = usePlantStore(state => state.plants);
+  const addPlant = usePlantStore(state => state.addPlant);
   const deletePlant = usePlantStore(state => state.deletePlant);
   const { theme, toggleTheme } = useTheme();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const { toast } = useToast();
+
+  const handlePopulateFromDatabase = () => {
+    const existingNames = new Set(plants.map(p => p.name.toLowerCase()));
+    let added = 0;
+    for (const dbPlant of PLANT_DATABASE) {
+      if (!existingNames.has(dbPlant.name.toLowerCase())) {
+        addPlant({
+          name: dbPlant.name,
+          type: dbPlant.type,
+          spacing: dbPlant.spacing,
+          sunlight: dbPlant.sunlight,
+          water: dbPlant.water,
+          fertilizer: dbPlant.fertilizer,
+          companionPlants: dbPlant.companionPlants,
+          incompatiblePlants: dbPlant.incompatiblePlants,
+        });
+        existingNames.add(dbPlant.name.toLowerCase());
+        added++;
+      }
+    }
+    toast({
+      title: added > 0 ? `Added ${added} plants` : "Catalog is up to date",
+      description: added > 0
+        ? `${added} new plants imported from the database. Your catalog now has ${plants.length + added} plants.`
+        : "All plants from the database are already in your catalog.",
+    });
+  };
 
   const filteredPlants = plants.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -253,6 +283,9 @@ export default function Plants() {
               aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
             >
               {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </Button>
+            <Button variant="outline" onClick={handlePopulateFromDatabase} data-testid="button-populate-database">
+              <Database className="w-4 h-4 mr-2" /> Populate from Database
             </Button>
             <AddPlantDialog>
               <Button data-testid="button-new-plant">
