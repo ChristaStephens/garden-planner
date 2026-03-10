@@ -166,6 +166,8 @@ export const PLANT_DATABASE: PlantReference[] = [
   { name: "Cucumber (Pickling)", type: "Vegetable", spacing: 12, sunlight: "Full Sun", water: "1-2 inches per week", fertilizer: "High nitrogen then balanced", companionPlants: ["Radish", "Sunflower", "Marigold", "Bean", "Pea", "Corn"], incompatiblePlants: ["Potato", "Sage", "Melon"] },
   { name: "Leeks (Hybrid - Jumper)", type: "Vegetable", spacing: 6, sunlight: "Full Sun", water: "1 inch per week", fertilizer: "High nitrogen, compost", companionPlants: ["Carrot", "Celery", "Onion", "Strawberry"], incompatiblePlants: ["Bean", "Pea"] },
   { name: "Cilantro (Cruiser)", type: "Herb", spacing: 6, sunlight: "Partial Shade", water: "Keep soil moist", fertilizer: "Light, balanced", companionPlants: ["Tomato", "Spinach", "Lettuce", "Pea", "Anise"], incompatiblePlants: ["Fennel", "Dill"] },
+  { name: "Hydrangea", type: "Flower", spacing: 48, sunlight: "Partial Shade", water: "1-2 inches per week", fertilizer: "Balanced, slightly acidic", companionPlants: ["Hosta", "Fern", "Azalea", "Lavender", "Boxwood"], incompatiblePlants: [] },
+  { name: "Hardy Mums", type: "Flower", spacing: 18, sunlight: "Full Sun", water: "1 inch per week", fertilizer: "Balanced liquid fertilizer", companionPlants: ["Aster", "Sedum", "Ornamental Grass", "Marigold", "Zinnia"], incompatiblePlants: [] },
 ];
 
 export function searchPlantDatabase(query: string): PlantReference[] {
