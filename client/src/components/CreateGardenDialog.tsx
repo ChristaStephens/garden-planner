@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
-import { Sprout, Ruler, CalendarDays, Grid2X2, Wand2, Check, X } from "lucide-react";
+import { Sprout, Ruler, CalendarDays, Grid2X2, Wand2, Check, X, Search } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { autoPlot } from "@/lib/auto-plot";
@@ -38,6 +38,14 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const [autoPopulate, setAutoPopulate] = useState(false);
   const [selectedPlantIds, setSelectedPlantIds] = useState<Set<number>>(new Set());
   const [plantDropdownOpen, setPlantDropdownOpen] = useState(false);
+  const [plantSearch, setPlantSearch] = useState("");
+
+  const sortedFilteredPlants = useMemo(() => {
+    const sorted = [...plants].sort((a, b) => a.name.localeCompare(b.name));
+    if (!plantSearch.trim()) return sorted;
+    const q = plantSearch.toLowerCase();
+    return sorted.filter(p => p.name.toLowerCase().includes(q));
+  }, [plants, plantSearch]);
 
   const togglePlant = (id: number) => {
     setSelectedPlantIds(prev => {
@@ -68,7 +76,7 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
   const resetForm = () => {
     setName(""); setWidth("4"); setLength("4"); setSeason("");
     setPlotCount(1); setAutoPopulate(false); setSelectedPlantIds(new Set());
-    setPlantDropdownOpen(false);
+    setPlantDropdownOpen(false); setPlantSearch("");
   };
 
   return (
@@ -231,31 +239,45 @@ export function CreateGardenDialog({ children }: { children: React.ReactNode }) 
                     </button>
                   </div>
                 </div>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search plants..."
+                    className="pl-8 h-8 text-sm"
+                    value={plantSearch}
+                    onChange={e => setPlantSearch(e.target.value)}
+                    data-testid="input-search-auto-populate"
+                  />
+                </div>
                 <div className="border border-border rounded-xl max-h-[200px] overflow-y-auto bg-background">
-                  {plants.map(plant => {
-                    const isSelected = selectedPlantIds.has(plant.id);
-                    return (
-                      <button
-                        key={plant.id}
-                        type="button"
-                        onClick={() => togglePlant(plant.id)}
-                        className={cn(
-                          "w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors border-b border-border/30 last:border-0",
-                          isSelected ? "bg-primary/5" : "hover:bg-muted/50"
-                        )}
-                        data-testid={`button-select-plant-${plant.id}`}
-                      >
-                        <div className={cn(
-                          "w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                          isSelected ? "bg-primary border-primary" : "border-border"
-                        )}>
-                          {isSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-                        </div>
-                        <span className="text-sm text-foreground font-medium flex-1">{plant.name}</span>
-                        <span className="text-[10px] text-muted-foreground capitalize">{plant.type}</span>
-                      </button>
-                    );
-                  })}
+                  {sortedFilteredPlants.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">No plants match "{plantSearch}"</p>
+                  ) : (
+                    sortedFilteredPlants.map(plant => {
+                      const isSelected = selectedPlantIds.has(plant.id);
+                      return (
+                        <button
+                          key={plant.id}
+                          type="button"
+                          onClick={() => togglePlant(plant.id)}
+                          className={cn(
+                            "w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors border-b border-border/30 last:border-0",
+                            isSelected ? "bg-primary/5" : "hover:bg-muted/50"
+                          )}
+                          data-testid={`button-select-plant-${plant.id}`}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                            isSelected ? "bg-primary border-primary" : "border-border"
+                          )}>
+                            {isSelected && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                          </div>
+                          <span className="text-sm text-foreground font-medium flex-1">{plant.name}</span>
+                          <span className="text-[10px] text-muted-foreground capitalize">{plant.type}</span>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
                 {selectedPlantIds.size > 0 && (
                   <p className="text-xs text-primary font-medium">
