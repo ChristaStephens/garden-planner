@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles, Wand2, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, Sprout, Eraser, MousePointer2, AlertCircle, Leaf, Printer, Sun, Moon, Plus, ChevronDown, ChevronUp, Sparkles, Wand2, Trash2, PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import { useGardenStore } from "@/hooks/use-garden-store";
 import { usePlantStore } from "@/hooks/use-plant-store";
 import { useTheme } from "@/hooks/use-theme";
@@ -47,6 +47,7 @@ export default function Planner() {
   const [inspectedPlantId, setInspectedPlantId] = useState<number | null>(null);
 
   const [showAddPlant, setShowAddPlant] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [newPlantName, setNewPlantName] = useState("");
   const [newPlantType, setNewPlantType] = useState("Vegetable");
   const [newPlantSpacing, setNewPlantSpacing] = useState("12");
@@ -156,6 +157,7 @@ export default function Planner() {
     setSelectedPlantId(plantId);
     setActiveTool("plant");
     setInspectedPlantId(plantId);
+    setMobileSidebarOpen(false);
   };
 
   const inspectedPlant = plants.find(p => p.id === inspectedPlantId);
@@ -175,99 +177,112 @@ export default function Planner() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 shrink-0 z-20">
-        <div className="flex items-center gap-4">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="h-6 w-px bg-border hidden sm:block" />
-          <div>
-            <h1 className="font-display text-lg font-bold text-foreground leading-tight">{garden.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {garden.width}ft × {garden.length}ft Grid
-              {(garden.plotCount || 1) > 1 ? ` · ${garden.plotCount} Plots` : ""}
-              {garden.season ? ` · ${garden.season}` : ""}
-            </p>
+      <header className="border-b border-border bg-card px-3 py-2 shrink-0 z-20">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link href="/">
+              <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-foreground h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <div className="min-w-0">
+              <h1 className="font-display text-sm sm:text-lg font-bold text-foreground leading-tight truncate">{garden.name}</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                {garden.width}ft × {garden.length}ft
+                {(garden.plotCount || 1) > 1 ? ` · ${garden.plotCount} Plots` : ""}
+                {garden.season ? ` · ${garden.season}` : ""}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            data-testid="button-theme-toggle"
-            aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
-            className="print-hidden"
-          >
-            {theme === "light" ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-          </Button>
-          <AutoPlotDialog
-            garden={garden}
-            plants={plants}
-            onApply={(grid) => {
-              setGardenGrid(garden.id, grid);
-              toast({ title: "Auto Plot applied!", description: "Your garden has been populated with the selected plants." });
-            }}
-          >
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap justify-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+              className="print-hidden lg:hidden h-8 w-8"
+              data-testid="button-toggle-sidebar"
+              aria-label="Toggle plant catalog"
+            >
+              {mobileSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              data-testid="button-theme-toggle"
+              aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              className="print-hidden h-8 w-8"
+            >
+              {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </Button>
+            <AutoPlotDialog
+              garden={garden}
+              plants={plants}
+              onApply={(grid) => {
+                setGardenGrid(garden.id, grid);
+                toast({ title: "Auto Plot applied!", description: "Your garden has been populated with the selected plants." });
+              }}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="button-auto-plot"
+                className="print-hidden h-8 text-xs"
+              >
+                <Wand2 className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Auto Plot</span>
+              </Button>
+            </AutoPlotDialog>
             <Button
               variant="outline"
               size="sm"
-              data-testid="button-auto-plot"
-              className="print-hidden"
+              data-testid="button-clear-all-plots"
+              onClick={() => {
+                if (garden && confirm("Clear all plants from every plot? This cannot be undone.")) {
+                  clearGarden(garden.id);
+                  toast({ title: "Plots cleared", description: "All plants have been removed from your plots." });
+                }
+              }}
+              className="print-hidden h-8 text-xs"
             >
-              <Wand2 className="w-3.5 h-3.5 mr-1.5" /> Auto Plot
+              <Trash2 className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Clear All</span>
             </Button>
-          </AutoPlotDialog>
-          <Button
-            variant="outline"
-            size="sm"
-            data-testid="button-clear-all-plots"
-            onClick={() => {
-              if (garden && confirm("Clear all plants from every plot? This cannot be undone.")) {
-                clearGarden(garden.id);
-                toast({ title: "Plots cleared", description: "All plants have been removed from your plots." });
-              }
-            }}
-            className="print-hidden"
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Clear All
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            data-testid="button-print-garden"
-            onClick={() => window.print()}
-            className="print-hidden"
-          >
-            <Printer className="w-3.5 h-3.5 mr-1.5" /> Print
-          </Button>
-          <div className="flex items-center bg-muted/50 p-1 rounded-xl border border-border/50 print-hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="button-print-garden"
+              onClick={() => window.print()}
+              className="print-hidden h-8 text-xs hidden sm:flex"
+            >
+              <Printer className="w-3.5 h-3.5 mr-1.5" /> Print
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-1 mt-2 sm:mt-0 print-hidden">
+          <div className="flex items-center bg-muted/50 p-1 rounded-xl border border-border/50">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setActiveTool("inspect")}
-              className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "inspect" && "bg-background shadow-sm")}
+              className={cn("rounded-lg text-xs font-semibold px-2 sm:px-3 h-7 sm:h-8", activeTool === "inspect" && "bg-background shadow-sm")}
             >
-              <MousePointer2 className="w-3.5 h-3.5 mr-1.5" /> Inspect
+              <MousePointer2 className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Inspect</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setActiveTool("plant")}
-              className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "plant" && "bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground")}
+              className={cn("rounded-lg text-xs font-semibold px-2 sm:px-3 h-7 sm:h-8", activeTool === "plant" && "bg-primary text-primary-foreground shadow-sm hover:text-primary-foreground")}
             >
-              <Sprout className="w-3.5 h-3.5 mr-1.5" /> Plant
+              <Sprout className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Plant</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setActiveTool("erase")}
-              className={cn("rounded-lg text-xs font-semibold px-3 h-8", activeTool === "erase" && "bg-destructive text-destructive-foreground shadow-sm hover:text-destructive-foreground")}
+              className={cn("rounded-lg text-xs font-semibold px-2 sm:px-3 h-7 sm:h-8", activeTool === "erase" && "bg-destructive text-destructive-foreground shadow-sm hover:text-destructive-foreground")}
             >
-              <Eraser className="w-3.5 h-3.5 mr-1.5" /> Erase
+              <Eraser className="w-3.5 h-3.5 sm:mr-1.5" /> <span className="hidden sm:inline">Erase</span>
             </Button>
           </div>
         </div>
@@ -278,8 +293,18 @@ export default function Planner() {
         <span style={{ fontSize: "0.875rem", color: "#666" }}>{garden.width}ft x {garden.length}ft{garden.season ? ` | ${garden.season}` : ""}</span>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-80 border-r border-border bg-card flex flex-col flex-shrink-0 z-10 shadow-[4px_0_10px_rgba(0,0,0,0.02)]">
+      <div className="flex flex-1 overflow-hidden relative">
+        {mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-30 lg:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+        <aside className={cn(
+          "w-80 border-r border-border bg-card flex flex-col flex-shrink-0 z-40 shadow-[4px_0_10px_rgba(0,0,0,0.02)]",
+          "fixed lg:relative inset-y-0 left-0 transition-transform duration-200 ease-in-out",
+          mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}>
           <div className="p-4 border-b border-border shrink-0">
             <h2 className="font-semibold mb-3 flex items-center gap-2">
               <Sprout className="w-4 h-4 text-primary" /> Plant Catalog
@@ -514,8 +539,8 @@ export default function Planner() {
           <div className={cn(
             "flex-1 overflow-auto bg-muted/30 min-h-[500px]",
             (garden.plotCount || 1) > 1
-              ? "grid grid-cols-4 auto-rows-min gap-4 p-4 items-start"
-              : "flex items-start justify-center p-8"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 auto-rows-min gap-4 p-4 items-start"
+              : "flex items-start justify-center p-4 sm:p-8"
           )}>
             {Array.from({ length: garden.plotCount || 1 }).map((_, plotIdx) => (
               <PlantingGrid
